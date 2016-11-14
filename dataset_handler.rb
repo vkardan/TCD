@@ -1,6 +1,7 @@
 # This class provides necessary methods for creating datasets. 
 #
 # @author: Vahid Kardan
+
 class Dataset
 
 	def initialize
@@ -181,42 +182,171 @@ class Dataset
 		end
 		File.open(graph_path+'.meta', 'w') {|f| f.puts "N: #{graph.size}, M: #{m}, C: #{cluster_dic.size}"}
 	end
+
+	def evaluate(real_classes_path:, clusters_path:)
+		graph = Hash.new
+		c = Hash.new
+		k = Hash.new
+		File.open(real_classes_path, "r").each_line do |line|
+			items = line.split(/\s/) - [""]
+			node_id = items[0]
+			node_class = items[1]
+			graph[node_id] = {}
+			graph[node_id]["c"] = node_class
+			c[node_class] ||= []
+			c[node_class] << node_id
+		end
+		File.open(clusters_path, "r").each_line do |line|
+			items = line.split(/\s/) - [""]
+			node_id = items[0]
+			node_cluster = items[1]
+			graph[node_id]["k"] = node_cluster
+			k[node_cluster] ||= []
+			k[node_cluster] << node_id
+		end
+
+		a = create_contingency_table graph: graph, c: c.keys, k: k.keys
+		vm = v_measure a: a, k: k.keys, c: c.keys, n: graph.size
+		nmi = nmi_measure a: a, k: k.keys, c: c.keys, n: graph.size
+		puts "V-measure: #{vm}, NMI: #{nmi}"
+	end
+
+private
+	def create_contingency_table(graph:, c:, k:)
+		a = Hash.new
+		c.each do |i|
+			a[i]=Hash.new
+			k.each do |j|
+				a[i][j] = 0
+			end
+		end
+		graph.each do |node, h|
+			a[h["c"]][h["k"]] += 1
+		end
+		return a
+	end
+
+	def nmi_measure(a:, k:, c:, n:)
+		hk = h_k(a: a, k: k, c: c, n: n)
+		hc = h_c(a: a, k: k, c: c, n: n)
+		hkc = h_k_c(a: a, k: k, c: c, n: n)
+		info = hk - hkc
+		puts "H(K)=#{hk}, H(C)=#{hc}, H(K|C)=#{hkc}, I(C,K)=#{info}"
+		return info/Math::sqrt(hc*hk) if hc != 0.0 && hk != 0.0
+		return info
+	end
+
+	def v_measure(a:, k:, c:, n:, beta: 1)
+		h = homogeneity(a: a, k: k, c: c, n: n)
+		c = completeness(a: a, k: k, c: c, n: n)
+		puts "h=#{h}, c=#{c}"
+		return (1+beta)*h*c/(beta*h+c)
+	end
+
+	def homogeneity(a:, k:, c:, n:)
+		hc = h_c(a: a, k: k, c: c, n: n)
+		return 1 - h_c_k(a: a, k: k, c: c, n: n)/hc if hc != 0.0
+		return 1
+	end
+
+	def completeness(a:, k:, c:, n:)
+		hk = h_k(a: a, k: k, c: c, n: n)
+		return 1 - h_k_c(a: a, k: k, c: c, n: n)/hk if hk != 0.0
+		return 1
+	end
+
+	def h_c_k(a:, k:, c:, n:) #H(C|K)
+		result = 0.0
+		k.each do |j|
+			sum = 0.0
+			c.each do |i|
+				sum += a[i][j]
+			end
+			c.each do |i|
+				result += a[i][j]*Math::log(a[i][j]/sum, 2) if a[i][j] != 0
+			end
+		end
+		return -result/n
+	end
+
+	def h_k_c(a:, k:, c:, n:)
+		result = 0.0
+		c.each do |i|
+			sum = 0.0
+			k.each do |j|
+				sum += a[i][j]
+			end
+			k.each do |j|
+				result += a[i][j]*Math::log(a[i][j]/sum, 2) if a[i][j] != 0
+			end
+		end
+		return -result/n
+	end
+
+	def h_c(a:, k:, c:, n:)
+		result = 0.0
+		c.each do |i|
+			sum = 0.0
+			k.each do |j|
+				sum += a[i][j]
+			end
+			result += sum*Math::log(sum/n,2) if sum != 0.0	#Although sum must never be zero!		
+		end
+		return -result/n
+	end
+
+	def h_k(a:, k:, c:, n:)
+		result = 0.0
+		k.each do |j|
+			sum = 0.0
+			c.each do |i|
+				sum += a[i][j]
+			end
+			result += sum*Math::log(sum/n,2) if sum != 0.0 #Although sum must never be zero!			
+		end
+		return -result/n
+	end
 end
 
-path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/polblogs/'
-Dataset.create_dataset_from_gml_file(
-	input: path+'polblogs.gml', 
-	graph_path: path+'polblogs.txt', 
-	clusters_path: path+'polblogs.clu',
-	first_node_id: 1
-)
+# path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/polblogs/'
+# Dataset.create_dataset_from_gml_file(
+# 	input: path+'polblogs.gml', 
+# 	graph_path: path+'polblogs.txt', 
+# 	clusters_path: path+'polblogs.clu',
+# 	first_node_id: 1
+# )
 
-path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/karate/'
-Dataset.create_dataset_from_paj_file(
-	graph_input: path+'karate.paj', 
-	clusters_input: path+'karate.paj.clu',
-	graph_path: path+'karate.txt', 
-	clusters_path: path+'karate.clu',
-	directed: false,
-	first_node_id: 1
-)
+# path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/karate/'
+# Dataset.create_dataset_from_paj_file(
+# 	graph_input: path+'karate.paj', 
+# 	clusters_input: path+'karate.paj.clu',
+# 	graph_path: path+'karate.txt', 
+# 	clusters_path: path+'karate.clu',
+# 	directed: false,
+# 	first_node_id: 1
+# )
 
-path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/citeseer/'
-Dataset.create_dataset_from_cites_file(
-	graph_input: path+'citeseer.cites', 
-	clusters_input: path+'citeseer.content',
-	graph_path: path+'citeseer.txt', 
-	clusters_path: path+'citeseer.clu',
-	directed: true,
-	first_node_id: 1
-)
+# path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/citeseer/'
+# Dataset.create_dataset_from_cites_file(
+# 	graph_input: path+'citeseer.cites', 
+# 	clusters_input: path+'citeseer.content',
+# 	graph_path: path+'citeseer.txt', 
+# 	clusters_path: path+'citeseer.clu',
+# 	directed: true,
+# 	first_node_id: 1
+# )
 
-path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/cora/'
-Dataset.create_dataset_from_cites_file(
-	graph_input: path+'cora.cites', 
-	clusters_input: path+'cora.content',
-	graph_path: path+'cora.txt', 
-	clusters_path: path+'cora.clu',
-	directed: true,
-	first_node_id: 1
+# path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/cora/'
+# Dataset.create_dataset_from_cites_file(
+# 	graph_input: path+'cora.cites', 
+# 	clusters_input: path+'cora.content',
+# 	graph_path: path+'cora.txt', 
+# 	clusters_path: path+'cora.clu',
+# 	directed: true,
+# 	first_node_id: 1
+# )
+path = '/home/vahid/Desktop/'
+Dataset.new.evaluate(
+	real_classes_path: path+"class_test.clu", 
+	clusters_path: path+"cluster_test.clu"
 )
