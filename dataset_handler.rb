@@ -189,6 +189,7 @@ class Dataset
 		k = Hash.new
 		File.open(real_classes_path, "r").each_line do |line|
 			items = line.split(/\s/) - [""]
+			next if items[0] == '#'
 			node_id = items[0]
 			node_class = items[1]
 			graph[node_id] = {}
@@ -198,6 +199,7 @@ class Dataset
 		end
 		File.open(clusters_path, "r").each_line do |line|
 			items = line.split(/\s/) - [""]
+			next if items[0] == '#'
 			node_id = items[0]
 			node_cluster = items[1]
 			graph[node_id]["k"] = node_cluster
@@ -231,7 +233,7 @@ private
 		hc = h_c(a: a, k: k, c: c, n: n)
 		hkc = h_k_c(a: a, k: k, c: c, n: n)
 		info = hk - hkc
-		puts "H(K)=#{hk}, H(C)=#{hc}, H(K|C)=#{hkc}, I(C,K)=#{info}"
+		puts "H(K): #{hk}, H(C): #{hc}, H(K|C): #{hkc}, I(C,K): #{info}"
 		return info/Math::sqrt(hc*hk) if hc != 0.0 && hk != 0.0
 		return info
 	end
@@ -239,7 +241,7 @@ private
 	def v_measure(a:, k:, c:, n:, beta: 1)
 		h = homogeneity(a: a, k: k, c: c, n: n)
 		c = completeness(a: a, k: k, c: c, n: n)
-		puts "h=#{h}, c=#{c}"
+		puts "h: #{h}, c: #{c}"
 		return (1+beta)*h*c/(beta*h+c)
 	end
 
@@ -345,8 +347,11 @@ end
 # 	directed: true,
 # 	first_node_id: 1
 # )
-path = '/home/vahid/Desktop/'
+infomap_path = '../Infomap/output/'
+louvain_path = '../gen-louvain/output/'
+ground_truth_path = '../Dropbox/Vahid-Research/community-detection/datasets/'
+dataset_name = 'cora'
 Dataset.new.evaluate(
-	real_classes_path: path+"class_test.clu", 
-	clusters_path: path+"cluster_test.clu"
+	real_classes_path: ground_truth_path+"#{dataset_name}/#{dataset_name}.clu", 
+	clusters_path: infomap_path+"#{dataset_name}.clu"
 )
