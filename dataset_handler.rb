@@ -233,7 +233,7 @@ private
 		hc = h_c(a: a, k: k, c: c, n: n)
 		hkc = h_k_c(a: a, k: k, c: c, n: n)
 		info = hk - hkc
-		puts "H(K): #{hk}, H(C): #{hc}, H(K|C): #{hkc}, I(C,K): #{info}"
+#		puts "H(K): #{hk}, H(C): #{hc}, H(K|C): #{hkc}, I(C,K): #{info}"
 		return info/Math::sqrt(hc*hk) if hc != 0.0 && hk != 0.0
 		return info
 	end
@@ -310,6 +310,41 @@ private
 	end
 end
 
+def run(params)
+ 
+	ground_truth_path = '../Dropbox/Vahid-Research/community-detection/datasets/'
+	algo_path = 
+		case params[0]
+		when 'i' 
+			'../Dropbox/Vahid-Research/community-detection/Infomap/output/'
+		when 'l'
+			'../Dropbox/Vahid-Research/community-detection/gen-louvain/output/'
+		when 't'
+			'../Dropbox/Vahid-Research/community-detection/TCD/output/'
+		else
+			puts 'Unknown algorithm!'
+			return
+		end
+
+	dataset_name = 
+		case params[1]
+		when 'k'
+			'karate'
+		when 'p'
+			'polblogs'
+		when 'co'
+			'cora'
+		when 'ci'
+			'citeseer'
+		else
+			puts 'Unknown dataset!'
+			return
+		end			
+	Dataset.new.evaluate(
+		real_classes_path: ground_truth_path+"#{dataset_name}/#{dataset_name}.clu", 
+		clusters_path: algo_path+"#{dataset_name}.clu"
+	)
+end
 # path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/polblogs/'
 # Dataset.create_dataset_from_gml_file(
 # 	input: path+'polblogs.gml', 
@@ -347,12 +382,4 @@ end
 # 	directed: true,
 # 	first_node_id: 1
 # )
-infomap_path = '../Dropbox/Vahid-Research/community-detection/Infomap/output/'
-louvain_path = '../Dropbox/Vahid-Research/community-detection/gen-louvain/output/'
-tcd_path = '../Dropbox/Vahid-Research/community-detection/TCD/output/'
-ground_truth_path = '../Dropbox/Vahid-Research/community-detection/datasets/'
-dataset_name = 'polblogs'
-Dataset.new.evaluate(
-	real_classes_path: ground_truth_path+"#{dataset_name}/#{dataset_name}.clu", 
-	clusters_path: tcd_path+"#{dataset_name}.clu"
-)
+run(ARGV)
