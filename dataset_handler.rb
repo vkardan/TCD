@@ -347,11 +347,12 @@ end
 # 	directed: true,
 # 	first_node_id: 1
 # )
-infomap_path = '../Infomap/output/'
-louvain_path = '../gen-louvain/output/'
+infomap_path = '../Dropbox/Vahid-Research/community-detection/Infomap/output/'
+louvain_path = '../Dropbox/Vahid-Research/community-detection/gen-louvain/output/'
+tcd_path = '../Dropbox/Vahid-Research/community-detection/TCD/output/'
 ground_truth_path = '../Dropbox/Vahid-Research/community-detection/datasets/'
-dataset_name = 'cora'
+dataset_name = 'polblogs'
 Dataset.new.evaluate(
 	real_classes_path: ground_truth_path+"#{dataset_name}/#{dataset_name}.clu", 
-	clusters_path: infomap_path+"#{dataset_name}.clu"
+	clusters_path: tcd_path+"#{dataset_name}.clu"
 )
