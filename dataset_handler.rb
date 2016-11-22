@@ -8,7 +8,7 @@ class Dataset
 
 	end
 
-	def self.create_dataset_from_gml_file(input:, graph_path:, clusters_path:, first_node_id: 1)
+	def self.create_dataset_from_gml_file(input:, graph_path:, clusters_path:, directed: true, first_node_id: 1)
 		n = 0
 		m = 0
 		index = first_node_id
@@ -50,8 +50,13 @@ class Dataset
 				raise 'Bad target format!' if state != 11
 				edge['target'] = items[1].to_i
 				graph[edge['source']]['children'] ||= []
-				graph[edge['source']]['children'] << edge['target'] 
+				graph[edge['source']]['children'] << graph[edge['target']]['id'] 
 				m += 1
+				unless directed then
+					graph[edge['target']]['children'] ||= []
+					graph[edge['target']]['children'] << graph[edge['source']]['id'] 
+					m += 1
+				end
 				state = 0
 			end						
 		end
@@ -83,11 +88,12 @@ class Dataset
 			items = line.split(/\s/) - [""]
 			case state
 			when 0
-				raise "Bad PAJ file format, keyword '*vertices' was not found!" if items[0].downcase != '*vertices'
+				# raise "Bad PAJ file format, keyword '*vertices' was not found!" if items[0].downcase != '*vertices'
+				next if items == [] || items[0].downcase != '*vertices'
 				n = items[1].to_i
 				state = 1
 			when 1
-				state = 10 if items[0].downcase == '*edges'
+				state = 10 if items[0].downcase == '*edges' || items[0].downcase == '*arcs'
 				node_counter = index - first_node_id
 				raise "Mismatch number of nodes: #{node_counter}, expected: #{n}!" unless (state == 1 && node_counter < n) || (state == 10 && node_counter == n) 
 				next if state == 10 
@@ -99,21 +105,34 @@ class Dataset
 				source = items[0].to_i
 				target = items[1].to_i
 				graph[source]['children'] ||= []
-				graph[source]['children'] << target
-				m += 1
+				unless graph[source]['children'].include?(target) || source == target then
+					graph[source]['children'] << target
+					m += 1
+				end
 				unless directed then
 					graph[target]['children'] ||= []
-					graph[target]['children'] << source
-					m += 1
+					unless graph[target]['children'].include?(source) || source == target then
+						graph[target]['children'] << source
+						m += 1
+					end
 				end
 			end
 		end
+		node_id = 0
+		cluster_id = nil
 		fi = File.open(clusters_input, "r")
 		fi.each_line do |line|
 			items = line.split(/\s/) - [""]
-			node_id = items[0].to_i
+			next if items == [] || items[0][0] == "*" || items[0][0] == "%" || items[0][0] == "#"
+			if items[1].nil? then
+				node_id += 1
+				cluster_id = items[0].to_i
+			else 
+				node_id = items[0].to_i
+				cluster_id = items[1].to_i
+			end
 			raise "Node with id: #{node_id} not found!" if graph[node_id].nil?
-			graph[node_id]['cluster'] = items[1].to_i
+			graph[node_id]['cluster'] = cluster_id
 		end
 		puts graph.size
 		graph = graph.sort.to_h
@@ -332,10 +351,16 @@ def run(params)
 			'karate'
 		when 'p'
 			'polblogs'
+		when 'p2'
+			'polblogs2'
 		when 'co'
 			'cora'
 		when 'ci'
 			'citeseer'
+		when 'y'
+			'yeast'
+		when 'f'
+			'football'
 		else
 			puts 'Unknown dataset!'
 			return
@@ -353,12 +378,43 @@ end
 # 	first_node_id: 1
 # )
 
+# name = "football"
+# path = "/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/#{name}/"
+# Dataset.create_dataset_from_gml_file(
+# 	input: path+name+'.gml', 
+# 	graph_path: path+name+'.txt', 
+# 	clusters_path: path+name+'.clu',
+# 	directed: false,
+# 	first_node_id: 1
+# )
+
 # path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/karate/'
 # Dataset.create_dataset_from_paj_file(
 # 	graph_input: path+'karate.paj', 
 # 	clusters_input: path+'karate.paj.clu',
 # 	graph_path: path+'karate.txt', 
 # 	clusters_path: path+'karate.clu',
+# 	directed: false,
+# 	first_node_id: 1
+# )
+
+# name = "yeast"
+# path = "/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/#{name}/"
+# Dataset.create_dataset_from_paj_file(
+# 	graph_input: path+name+".paj", 
+# 	clusters_input: path+name+'.paj.clu',
+# 	graph_path: path+name+'.txt', 
+# 	clusters_path: path+name+'.clu',
+# 	directed: false,
+# 	first_node_id: 1
+# )
+
+# path = '/home/vahid/Dropbox/cuda/samples/'
+# Dataset.create_dataset_from_paj_file(
+# 	graph_input: path+'polblogs.paj', 
+# 	clusters_input: path+'polblogs.paj.clu',
+# 	graph_path: path+'polblogs.txt', 
+# 	clusters_path: path+'polblogs.clu',
 # 	directed: false,
 # 	first_node_id: 1
 # )
