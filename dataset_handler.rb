@@ -230,6 +230,7 @@ class Dataset
 			end
 			node_id = items[0]
 			node_cluster = items[1]
+			puts items[0] if graph[node_id].nil?
 			graph[node_id]["k"] = node_cluster
 			k[node_cluster] ||= []
 			k[node_cluster] << node_id
