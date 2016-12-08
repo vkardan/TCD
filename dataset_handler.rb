@@ -216,9 +216,18 @@ class Dataset
 			c[node_class] ||= []
 			c[node_class] << node_id
 		end
+		d = 1
+		alpha = -1
+		beta = -1
 		File.open(clusters_path, "r").each_line do |line|
 			items = line.split(/\s/) - [""]
 			next if items[0] == '#'
+			if( items[0] == '*' ) then
+				d = items[1]
+				beta = items[2]
+				alpha = items[3]
+				next
+			end
 			node_id = items[0]
 			node_cluster = items[1]
 			graph[node_id]["k"] = node_cluster
@@ -233,6 +242,9 @@ class Dataset
 	end
 
 private
+	def objective_function(graph:, k:)
+
+	end
 	def create_contingency_table(graph:, c:, k:)
 		a = Hash.new
 		c.each do |i|
@@ -364,11 +376,13 @@ def run(params)
 		else
 			puts 'Unknown dataset!'
 			return
-		end			
-	Dataset.new.evaluate(
-		real_classes_path: ground_truth_path+"#{dataset_name}/#{dataset_name}.clu", 
-		clusters_path: algo_path+"#{dataset_name}.clu"
-	)
+		end	
+#	Dir[algo_path+"#{dataset_name}/*"].each do |name|	
+		Dataset.new.evaluate(
+			real_classes_path: ground_truth_path+"#{dataset_name}/#{dataset_name}.clu", 
+			clusters_path: algo_path+"#{dataset_name}.clu"
+		)
+#	end
 end
 # path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/polblogs/'
 # Dataset.create_dataset_from_gml_file(
