@@ -374,16 +374,28 @@ def run(params)
 			'yeast'
 		when 'f'
 			'football'
+		when 'g'
+			'generated'
 		else
 			puts 'Unknown dataset!'
 			return
-		end	
-#	Dir[algo_path+"#{dataset_name}/*"].each do |name|	
-		Dataset.new.evaluate(
-			real_classes_path: ground_truth_path+"#{dataset_name}/#{dataset_name}.clu", 
-			clusters_path: algo_path+"#{dataset_name}.clu"
-		)
-#	end
+		end
+		if params[1] == 'g' then
+			puts "=========================================================="
+			Dir[algo_path+"#{dataset_name}/#{params[2]}/*"].each do |name|	
+				puts name.split('/')[-1]
+				Dataset.new.evaluate(
+					real_classes_path: ground_truth_path+"#{dataset_name}/#{params[2]}/#{name.split('/')[-1]}", 
+					clusters_path: name
+				)
+				puts "=========================================================="
+			end
+		else	
+			Dataset.new.evaluate(
+				real_classes_path: ground_truth_path+"#{dataset_name}/#{dataset_name}.clu", 
+				clusters_path: algo_path+"#{dataset_name}.clu"
+			)
+		end
 end
 # path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/polblogs/'
 # Dataset.create_dataset_from_gml_file(
