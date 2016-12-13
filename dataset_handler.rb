@@ -240,6 +240,7 @@ class Dataset
 		vm = v_measure a: a, k: k.keys, c: c.keys, n: graph.size
 		nmi = nmi_measure a: a, k: k.keys, c: c.keys, n: graph.size
 		puts "V-measure: #{vm}, NMI: #{nmi}"
+		return {vm: vm, nmi: nmi}
 	end
 
 private
@@ -381,15 +382,29 @@ def run(params)
 			return
 		end
 		if params[1] == 'g' then
+			avg_vm = 0.0
+			avg_nmi = 0.0
+			dev_vm = 0.0
+			dev_nmi = 0.0
 			puts "=========================================================="
 			Dir[algo_path+"#{dataset_name}/#{params[2]}/*"].each do |name|	
 				puts name.split('/')[-1]
-				Dataset.new.evaluate(
+				r=Dataset.new.evaluate(
 					real_classes_path: ground_truth_path+"#{dataset_name}/#{params[2]}/#{name.split('/')[-1]}", 
 					clusters_path: name
 				)
 				puts "=========================================================="
+				avg_vm += r[:vm]
+				avg_nmi += r[:nmi]
+				dev_vm += r[:vm]**2
+				dev_nmi += r[:nmi]**2
 			end
+			num_files = Dir[algo_path+"#{dataset_name}/#{params[2]}/*"].size
+			avg_vm = avg_vm/num_files
+			avg_nmi = avg_nmi/num_files
+			dev_vm = (dev_vm/num_files - avg_vm**2)**0.5
+			dev_nmi = (dev_nmi/num_files - avg_nmi**2)**0.5
+			puts "Avg. V-measure:\t#{avg_vm}\nSD. V-measure:\t#{dev_vm}\nAvg. NMI:\t#{avg_nmi}\nSD. NMI:\t#{dev_nmi}"
 		else	
 			Dataset.new.evaluate(
 				real_classes_path: ground_truth_path+"#{dataset_name}/#{dataset_name}.clu", 
