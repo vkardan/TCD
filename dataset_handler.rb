@@ -365,8 +365,8 @@ def run(params)
 			'karate'
 		when 'p'
 			'polblogs'
-		when 'p2'
-			'polblogs2'
+		when 'b'
+			'polbooks'
 		when 'co'
 			'cora'
 		when 'ci'
@@ -421,6 +421,16 @@ end
 # )
 
 # name = "football"
+# path = "/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/#{name}/"
+# Dataset.create_dataset_from_gml_file(
+# 	input: path+name+'.gml', 
+# 	graph_path: path+name+'.txt', 
+# 	clusters_path: path+name+'.clu',
+# 	directed: false,
+# 	first_node_id: 1
+# )
+
+# name = "polbooks"
 # path = "/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/#{name}/"
 # Dataset.create_dataset_from_gml_file(
 # 	input: path+name+'.gml', 
