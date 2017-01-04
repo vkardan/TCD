@@ -230,7 +230,10 @@ class Dataset
 			end
 			node_id = items[0]
 			node_cluster = items[1]
-			puts items[0] if graph[node_id].nil?
+			if graph[node_id].nil? then
+				puts "Warning unknown node id: "+items[0] 
+				next
+			end
 			graph[node_id]["k"] = node_cluster
 			k[node_cluster] ||= []
 			k[node_cluster] << node_id
@@ -381,36 +384,39 @@ def run(params)
 			puts 'Unknown dataset!'
 			return
 		end
-		if params[1] == 'g' then
-			avg_vm = 0.0
-			avg_nmi = 0.0
-			dev_vm = 0.0
-			dev_nmi = 0.0
-			puts "=========================================================="
-			Dir[algo_path+"#{dataset_name}/#{params[2]}/*"].each do |name|	
-				puts name.split('/')[-1]
-				r=Dataset.new.evaluate(
-					real_classes_path: ground_truth_path+"#{dataset_name}/#{params[2]}/#{name.split('/')[-1]}", 
-					clusters_path: name
-				)
-				puts "=========================================================="
-				avg_vm += r[:vm]
-				avg_nmi += r[:nmi]
-				dev_vm += r[:vm]**2
-				dev_nmi += r[:nmi]**2
-			end
-			num_files = Dir[algo_path+"#{dataset_name}/#{params[2]}/*"].size
-			avg_vm = avg_vm/num_files
-			avg_nmi = avg_nmi/num_files
-			dev_vm = (dev_vm/num_files - avg_vm**2)**0.5
-			dev_nmi = (dev_nmi/num_files - avg_nmi**2)**0.5
-			puts "Avg. V-measure:\t#{avg_vm}\nSD. V-measure:\t#{dev_vm}\nAvg. NMI:\t#{avg_nmi}\nSD. NMI:\t#{dev_nmi}"
-		else	
-			Dataset.new.evaluate(
-				real_classes_path: ground_truth_path+"#{dataset_name}/#{dataset_name}.clu", 
-				clusters_path: algo_path+"#{dataset_name}.clu"
-			)
+
+	avg_vm = 0.0
+	avg_nmi = 0.0
+	dev_vm = 0.0
+	dev_nmi = 0.0
+	clusters_path = algo_path+"#{dataset_name}/"
+	clusters_path += "#{params[2]}/" if params[2] != nil
+	clusters_path += "*"
+
+	puts "=========================================================="
+	Dir[clusters_path].each do |name|	
+		puts name.split('/')[-1]
+		if params[2] != nil then
+			real_classes_path = ground_truth_path+"#{dataset_name}/#{params[2]}/#{name.split('/')[-1]}"
+		else
+			real_classes_path = ground_truth_path+"#{dataset_name}/#{dataset_name}.clu"
 		end
+		r=Dataset.new.evaluate(
+			real_classes_path: real_classes_path, 
+			clusters_path: name
+		)
+		puts "=========================================================="
+		avg_vm += r[:vm]
+		avg_nmi += r[:nmi]
+		dev_vm += r[:vm]**2
+		dev_nmi += r[:nmi]**2
+	end
+	num_files = Dir[clusters_path].size
+	avg_vm = avg_vm/num_files
+	avg_nmi = avg_nmi/num_files
+	dev_vm = (dev_vm/num_files - avg_vm**2)**0.5
+	dev_nmi = (dev_nmi/num_files - avg_nmi**2)**0.5
+	puts "Avg. V-measure:\t#{avg_vm}\nSD. V-measure:\t#{dev_vm}\nAvg. NMI:\t#{avg_nmi}\nSD. NMI:\t#{dev_nmi}"
 end
 # path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/polblogs/'
 # Dataset.create_dataset_from_gml_file(
