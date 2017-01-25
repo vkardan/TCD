@@ -378,8 +378,10 @@ def run(params)
 			'yeast'
 		when 'f'
 			'football'
-		when 'g'
-			'generated'
+		when 'gd'
+			'generated/directed'
+		when 'gu'
+			'generated/undirected'
 		else
 			puts 'Unknown dataset!'
 			return
@@ -432,6 +434,9 @@ def run(params)
 	dev_h = (dev_h/num_files - avg_h**2)**0.5
 	dev_vm = (dev_vm/num_files - avg_vm**2)**0.5
 	dev_nmi = (dev_nmi/num_files - avg_nmi**2)**0.5
+	puts "----------------------------------------------------------"
+	puts "Measure\t\tAvg.\t\t\tSD."
+	puts "----------------------------------------------------------"
 	puts "Completeness:\t#{avg_c} ,\t#{dev_c}\nHomogenity:\t#{avg_h} ,\t#{dev_h}"
 	puts "V-measure:\t#{avg_vm} ,\t#{dev_vm}\nNMI:\t\t#{avg_nmi} ,\t#{dev_nmi}"
 end
