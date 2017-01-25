@@ -240,10 +240,13 @@ class Dataset
 		end
 
 		a = create_contingency_table graph: graph, c: c.keys, k: k.keys
-		vm = v_measure a: a, k: k.keys, c: c.keys, n: graph.size
+		homo = homogeneity a: a, k: k.keys, c: c.keys, n: graph.size
+		comp = completeness a: a, k: k.keys, c: c.keys, n: graph.size
+		puts "c: #{comp} , h: #{homo}"
+		vm = v_measure homo: homo, comp: comp
 		nmi = nmi_measure a: a, k: k.keys, c: c.keys, n: graph.size
-		puts "V-measure: #{vm}, NMI: #{nmi}"
-		return {vm: vm, nmi: nmi}
+		puts "V-measure: #{vm} , NMI: #{nmi}"
+		return {c: comp, h: homo, vm: vm, nmi: nmi}
 	end
 
 private
@@ -274,11 +277,8 @@ private
 		return info
 	end
 
-	def v_measure(a:, k:, c:, n:, beta: 1)
-		h = homogeneity(a: a, k: k, c: c, n: n)
-		c = completeness(a: a, k: k, c: c, n: n)
-		puts "h: #{h}, c: #{c}"
-		return (1+beta)*h*c/(beta*h+c)
+	def v_measure(homo:, comp:, beta: 1)
+		return (1+beta)*homo*comp/(beta*homo+comp)
 	end
 
 	def homogeneity(a:, k:, c:, n:)
@@ -385,10 +385,16 @@ def run(params)
 			return
 		end
 
+	avg_c = 0.0
+	avg_h = 0.0
 	avg_vm = 0.0
 	avg_nmi = 0.0
+	
+	dev_c = 0.0
+	dev_h = 0.0
 	dev_vm = 0.0
 	dev_nmi = 0.0
+
 	clusters_path = algo_path+"#{dataset_name}/"
 	clusters_path += "#{params[2]}/" if params[2] != nil
 	clusters_path += "*"
@@ -406,17 +412,28 @@ def run(params)
 			clusters_path: name
 		)
 		puts "=========================================================="
+		avg_c += r[:c]
+		avg_h += r[:h]
 		avg_vm += r[:vm]
 		avg_nmi += r[:nmi]
+
+		dev_c += r[:c]**2
+		dev_h += r[:h]**2
 		dev_vm += r[:vm]**2
 		dev_nmi += r[:nmi]**2
 	end
 	num_files = Dir[clusters_path].size
+	avg_c = avg_c/num_files
+	avg_h = avg_h/num_files
 	avg_vm = avg_vm/num_files
 	avg_nmi = avg_nmi/num_files
+
+	dev_c = (dev_c/num_files - avg_c**2)**0.5
+	dev_h = (dev_h/num_files - avg_h**2)**0.5
 	dev_vm = (dev_vm/num_files - avg_vm**2)**0.5
 	dev_nmi = (dev_nmi/num_files - avg_nmi**2)**0.5
-	puts "Avg. V-measure:\t#{avg_vm}\nSD. V-measure:\t#{dev_vm}\nAvg. NMI:\t#{avg_nmi}\nSD. NMI:\t#{dev_nmi}"
+	puts "Completeness:\t#{avg_c} ,\t#{dev_c}\nHomogenity:\t#{avg_h} ,\t#{dev_h}"
+	puts "V-measure:\t#{avg_vm} ,\t#{dev_vm}\nNMI:\t\t#{avg_nmi} ,\t#{dev_nmi}"
 end
 # path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/polblogs/'
 # Dataset.create_dataset_from_gml_file(
