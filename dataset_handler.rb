@@ -202,6 +202,91 @@ class Dataset
 		File.open(graph_path+'.meta', 'w') {|f| f.puts "N: #{graph.size}, M: #{m}, C: #{cluster_dic.size}"}
 	end
 
+	def self.create_dataset_from_snap_file(graph_input:, clusters_input:, graph_path:, clusters_path:, directed:, first_node_id: 1)
+		m = 0
+		node_id = first_node_id
+		cluster_id = 1
+		id_dic = Hash.new
+		cluster_dic = Hash.new
+		graph = Hash.new
+		fi = File.open(clusters_input, "r")
+		fi.each_line do |line|
+			items = line.split(/\s/) - [""]
+			cluster_dic[cluster_id] = []
+			items.each do |itm|
+				if id_dic[itm].nil? then 
+					id_dic[itm] = node_id
+					graph[node_id] = {}	
+					graph[node_id]['cluster'] = []
+					node_id += 1
+				end
+				graph[id_dic[itm]]['cluster'] << cluster_id
+				cluster_dic[cluster_id] << id_dic[itm]
+			end
+			cluster_id += 1
+		end
+
+		fi = File.open(graph_input, "r")
+		fi.each_line do |line| 
+			items = line.split(/\s/) - [""]
+			next if items[0][0] == "#"
+			source = id_dic[items[0]]
+			target = id_dic[items[1]]
+			puts "Undefined source: #{items[0]}" if source.nil?
+			puts "Undefined target: #{items[1]}" if target.nil?
+			next if source.nil? || target.nil?
+			graph[source]['children'] ||= []
+			graph[source]['children'] << target
+			m += 1
+			unless directed then
+				graph[target]['children'] ||= []
+				graph[target]['children'] << source
+				m += 1
+			end
+		end
+
+		puts graph.size
+		graph = graph.sort.to_h
+		File.open(clusters_path+'.v1', 'w') do |c|
+			graph.each do |node, h|
+				raise "Bad format, no cluster found for node: #{node}" if h['cluster'].nil?
+				h['cluster'].each do |itm|
+					c.puts "#{node} #{itm}"
+				end
+			end
+		end
+		File.open(clusters_path, 'w') do |c|
+			cluster_dic.each do |clusid, mem|
+				c.puts mem.join(' ')
+			end
+		end
+		File.open(graph_path, 'w') do |g|
+			graph.each do |node, h|
+				h['children'].sort.each { |child| g.puts "#{node} #{child}" } unless h['children'].nil?
+			end
+		end
+		File.open(graph_path+'.meta', 'w') {|f| f.puts "N: #{graph.size}, M: #{m}, C: #{cluster_dic.size}"}
+	end
+
+	def self.convert_cluster_file(clusters_input:)
+		cluster_dic = Hash.new
+		fi = File.open(clusters_input, "r")
+		fi.each_line do |line|
+			items = line.split(/\s/) - [""]
+			next if items[0][0] == "#" || items[0][0] == "*"
+			nid = items[0]
+			cid = items[1]
+			cluster_dic[cid] ||= []
+			cluster_dic[cid] << nid
+		end
+
+		File.open(clusters_input+'.v2', 'w') do |c|
+			cluster_dic.each do |clusid, mem|
+				c.puts mem.join(' ')
+			end
+		end
+	end
+
 	def evaluate(real_classes_path:, clusters_path:)
 		graph = Hash.new
 		c = Hash.new
@@ -249,6 +334,61 @@ class Dataset
 		return {c: comp, h: homo, vm: vm, nmi: nmi}
 	end
 
+	def evaluate2(real_classes_path:, clusters_path:)
+		graph = Hash.new
+		c = Hash.new
+		k = Hash.new
+		class_id = 1
+		File.open(real_classes_path, "r").each_line do |line|
+			items = line.split(/\s/) - [""]
+			next if items[0] == '#'
+			node_id = items[0]
+			node_class = items[1]
+			graph[node_id] ||= {}
+			graph[node_id]["c"] ||= []
+			graph[node_id]["c"] << node_class
+			c[node_class] ||= []
+			c[node_class] << node_id
+		end
+		puts "Ground truth labels are loaded."
+
+		d = 1
+		alpha = -1
+		beta = -1
+		File.open(clusters_path, "r").each_line do |line|
+			items = line.split(/\s/) - [""]
+			next if items[0] == '#'
+			if( items[0] == '*' ) then
+				d = items[1]
+				beta = items[2]
+				alpha = items[3]
+				next
+			end
+			node_id = items[0]
+			node_cluster = items[1]
+			if graph[node_id].nil? then
+				puts "Warning unknown node id: "+items[0] 
+				next
+			end
+			graph[node_id]["k"] ||= []
+			graph[node_id]["k"] << node_cluster
+			k[node_cluster] ||= []
+			k[node_cluster] << node_id
+		end
+		puts "Clusters are loaded."
+
+		a = create_contingency_table2 graph: graph, c: c.keys, k: k.keys
+		puts "Contigency table has been created."
+
+		homo = homogeneity a: a, k: k.keys, c: c.keys, n: graph.size
+		comp = completeness a: a, k: k.keys, c: c.keys, n: graph.size
+		puts "c: #{comp} , h: #{homo}"
+		vm = v_measure homo: homo, comp: comp
+		nmi = nmi_measure a: a, k: k.keys, c: c.keys, n: graph.size
+		puts "V-measure: #{vm} , NMI: #{nmi}"
+		return {c: comp, h: homo, vm: vm, nmi: nmi}
+	end
+
 private
 	def objective_function(graph:, k:)
 
@@ -263,6 +403,24 @@ private
 		end
 		graph.each do |node, h|
 			a[h["c"]][h["k"]] += 1
+		end
+		return a
+	end
+
+	def create_contingency_table2(graph:, c:, k:)
+		a = Hash.new
+		c.each do |i|
+			a[i]=Hash.new
+			k.each do |j|
+				a[i][j] = 0
+			end
+		end
+		graph.each do |node, h|
+			h["c"].each do |cid|
+				h["k"].each do |kid|
+					a[cid][kid] += 1.0/(h["c"].size*h["k"].size)
+				end
+			end
 		end
 		return a
 	end
@@ -348,9 +506,20 @@ end
 
 def run(params)
  
+ 	eval_fun = 
+ 		case params[0]
+ 		when 'e1'
+ 			'e1'
+ 		when 'e2'
+ 			'e2'
+ 		else
+ 			puts 'Unknown evaluation function!'
+ 			return
+ 		end
+
 	ground_truth_path = '../Dropbox/Vahid-Research/community-detection/datasets/'
 	algo_path = 
-		case params[0]
+		case params[1]
 		when 'i' 
 			'../Dropbox/Vahid-Research/community-detection/Infomap/output/'
 		when 'l'
@@ -363,7 +532,7 @@ def run(params)
 		end
 
 	dataset_name = 
-		case params[1]
+		case params[2]
 		when 'k'
 			'karate'
 		when 'p'
@@ -378,6 +547,8 @@ def run(params)
 			'yeast'
 		when 'f'
 			'football'
+		when 'am'
+			'amazon'
 		when 'gd'
 			'generated/directed'
 		when 'gu'
@@ -398,21 +569,31 @@ def run(params)
 	dev_nmi = 0.0
 
 	clusters_path = algo_path+"#{dataset_name}/"
-	clusters_path += "#{params[2]}/" if params[2] != nil
+	clusters_path += "#{params[3]}/" if params[3] != nil
 	clusters_path += "*"
 
 	puts "=========================================================="
 	Dir[clusters_path].each do |name|	
 		puts name.split('/')[-1]
-		if params[2] != nil then
-			real_classes_path = ground_truth_path+"#{dataset_name}/#{params[2]}/#{name.split('/')[-1]}"
+		if params[3] != nil then
+			real_classes_path = ground_truth_path+"#{dataset_name}/#{params[3]}/#{name.split('/')[-1]}"
 		else
 			real_classes_path = ground_truth_path+"#{dataset_name}/#{dataset_name}.clu"
 		end
-		r=Dataset.new.evaluate(
-			real_classes_path: real_classes_path, 
-			clusters_path: name
-		)
+
+		r = {}
+		if eval_fun == 'e1' then
+			r=Dataset.new.evaluate(
+				real_classes_path: real_classes_path, 
+				clusters_path: name
+			)
+		else
+			r=Dataset.new.evaluate2(
+				real_classes_path: real_classes_path, 
+				clusters_path: name
+			)
+		end
+
 		puts "=========================================================="
 		avg_c += r[:c]
 		avg_h += r[:h]
@@ -518,4 +699,15 @@ end
 # 	directed: true,
 # 	first_node_id: 1
 # )
-run(ARGV)
+
+# path = '/home/vahid/Desktop/Amazon/'
+# Dataset.create_dataset_from_snap_file(
+# 	graph_input: path+'com-amazon.ungraph.txt', 
+# 	clusters_input: path+'com-amazon.all.dedup.cmty.txt',
+# 	graph_path: path+'amazon.txt', 
+# 	clusters_path: path+'amazon.clu',
+# 	directed: false,
+# 	first_node_id: 1
+# )
+Dataset.convert_cluster_file clusters_input: "/home/vahid/Desktop/amazon.clu"
+#run(ARGV)
