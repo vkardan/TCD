@@ -287,6 +287,26 @@ class Dataset
 		end
 	end
 
+	def self.convert_gen_cluster_file(clusters_input:)
+		cluster_dic = Hash.new
+		fi = File.open(clusters_input, "r")
+		fi.each_line do |line|
+			items = line.split(/\s/) - [""]
+			next if items[0][0] == "#" || items[0][0] == "*"
+			nid = items[0]
+			items[1..-1].each do |cid|
+				cluster_dic[cid] ||= []
+				cluster_dic[cid] << nid
+			end
+		end
+
+		File.open(clusters_input+'.v2', 'w') do |c|
+			cluster_dic.each do |clusid, mem|
+				c.puts mem.join(' ')
+			end
+		end
+	end
+
 	def evaluate(real_classes_path:, clusters_path:)
 		graph = Hash.new
 		c = Hash.new
@@ -709,5 +729,6 @@ end
 # 	directed: false,
 # 	first_node_id: 1
 # )
-Dataset.convert_cluster_file clusters_input: "/home/vahid/Desktop/amazon.clu"
+Dataset.convert_cluster_file clusters_input: "/home/vahid/Desktop/tcd_g1.clu"
+#Dataset.convert_gen_cluster_file clusters_input: "/home/vahid/Desktop/g1.gr.clu"
 #run(ARGV)
