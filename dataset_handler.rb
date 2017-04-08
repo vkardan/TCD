@@ -226,6 +226,10 @@ class Dataset
 			cluster_id += 1
 		end
 
+		cluster_dic.each{|key, val| cluster_dic[key]=val.sort }
+		arr = Array.new
+		cluster_dic.each{|key, val| arr.include?(val) ? cluster_dic.delete(key) : arr << val }
+
 		fi = File.open(graph_input, "r")
 		fi.each_line do |line| 
 			items = line.split(/\s/) - [""]
@@ -729,6 +733,17 @@ end
 # 	directed: false,
 # 	first_node_id: 1
 # )
+# snap_dataset_name = "DBLP"
+# path = "/home/vahid/Desktop/#{snap_dataset_name}/"
+# Dataset.create_dataset_from_snap_file(
+# 	graph_input: path+"com-#{snap_dataset_name.downcase}.ungraph.txt", 
+# 	clusters_input: path+"com-#{snap_dataset_name.downcase}.top5000.cmty.txt",
+# 	graph_path: path+"#{snap_dataset_name.downcase}5000.txt", 
+# 	clusters_path: path+"#{snap_dataset_name.downcase}5000.clu",
+# 	directed: false,
+# 	first_node_id: 1
+# )
+# Dataset.convert_cluster_file clusters_input: "/home/vahid/Desktop/tcd_#{snap_dataset_name.downcase}5000.clu"
 Dataset.convert_cluster_file clusters_input: "/home/vahid/Desktop/tcd_g1.clu"
-#Dataset.convert_gen_cluster_file clusters_input: "/home/vahid/Desktop/g1.gr.clu"
+# Dataset.convert_gen_cluster_file clusters_input: "/home/vahid/Desktop/g1.gr.clu"
 #run(ARGV)
