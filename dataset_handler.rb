@@ -744,6 +744,6 @@ end
 # 	first_node_id: 1
 # )
 # Dataset.convert_cluster_file clusters_input: "/home/vahid/Desktop/tcd_#{snap_dataset_name.downcase}5000.clu"
-Dataset.convert_cluster_file clusters_input: "/home/vahid/Desktop/tcd_g1.clu"
+# Dataset.convert_cluster_file clusters_input: "/home/vahid/Desktop/1.clu"
 # Dataset.convert_gen_cluster_file clusters_input: "/home/vahid/Desktop/g1.gr.clu"
-#run(ARGV)
+run(ARGV)
