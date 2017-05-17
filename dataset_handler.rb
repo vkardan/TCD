@@ -1,6 +1,7 @@
 # This class provides necessary methods for creating datasets. 
 #
 # @author: Vahid Kardan
+require 'getoptlong'
 
 class Dataset
 
@@ -529,7 +530,7 @@ private
 end
 
 def run(params)
- 
+ 	# params = Hash[ argv.flat_map{|s| s.scan(/--?([^=\s]+)(?:=(\S+))?/) } ]
  	eval_fun = 
  		case params[0]
  		when 'e1'
@@ -555,7 +556,7 @@ def run(params)
 			return
 		end
 
-	dataset_name = 
+	dataset_name =
 		case params[2]
 		when 'k'
 			'karate'
@@ -644,6 +645,121 @@ def run(params)
 	puts "----------------------------------------------------------"
 	puts "Completeness:\t#{avg_c} ,\t#{dev_c}\nHomogenity:\t#{avg_h} ,\t#{dev_h}"
 	puts "V-measure:\t#{avg_vm} ,\t#{dev_vm}\nNMI:\t\t#{avg_nmi} ,\t#{dev_nmi}"
+end
+
+def run2
+	opts = GetoptLong.new(
+	  [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
+	  [ '--generated', '-g', GetoptLong::NO_ARGUMENT ],
+	  [ '--evaluation', '-e', GetoptLong::OPTIONAL_ARGUMENT  ],
+	  [ '--input', '-i', GetoptLong::REQUIRED_ARGUMENT ],
+	  [ '--ground-truth', '-t', GetoptLong::REQUIRED_ARGUMENT ]
+	)
+
+	dir = nil
+	evaluation = 1
+	input = nil
+	ground_truth_path = nil
+	generated = false
+	opts.each do |opt, arg|
+	  case opt
+		when '--help'
+		  puts <<-EOF
+-h, --help:
+   show help
+
+-g, --generated:
+   indicate if the graph type is generated
+
+--evaluation x, -e x:
+   use 1 for NMI and 2 for ONMI
+
+--input [path], -i [path]:
+   the path to the input clusters file
+
+--ground-truth [path], -g [path]:
+   the path to the ground truth clusters file
+EOF
+		  exit 0
+		when '--generated'
+		  generated = true
+		when '--evaluation'
+		  evaluation = arg.to_i
+		when '--input'
+		  input = arg + "/*"
+		when '--ground-truth'
+		  ground_truth_path = arg
+	  end
+	end
+
+	# if ARGV.length != 1
+	#   puts "Missing dir argument (try --help)"
+	#   exit 0
+	# end
+
+	# dir = ARGV.shift
+
+	# Dir.chdir(dir)
+
+	avg_c = 0.0
+	avg_h = 0.0
+	avg_vm = 0.0
+	avg_nmi = 0.0
+	
+	dev_c = 0.0
+	dev_h = 0.0
+	dev_vm = 0.0
+	dev_nmi = 0.0
+
+	puts "=========================================================="
+	Dir[input].each do |name|	
+		puts name.split('/')[-1]
+		if generated then
+			real_classes_path = ground_truth_path+"#{name.split('/')[-1]}"
+		else
+			real_classes_path = ground_truth_path
+		end
+
+		r = {}
+		if evaluation == 1 then
+			r=Dataset.new.evaluate(
+				real_classes_path: real_classes_path, 
+				clusters_path: name
+			)
+		else
+			r=Dataset.new.evaluate2(
+				real_classes_path: real_classes_path, 
+				clusters_path: name
+			)
+		end
+
+		puts "=========================================================="
+		avg_c += r[:c]
+		avg_h += r[:h]
+		avg_vm += r[:vm]
+		avg_nmi += r[:nmi]
+
+		dev_c += r[:c]**2
+		dev_h += r[:h]**2
+		dev_vm += r[:vm]**2
+		dev_nmi += r[:nmi]**2
+	end
+	num_files = Dir[input].size
+	avg_c = avg_c/num_files
+	avg_h = avg_h/num_files
+	avg_vm = avg_vm/num_files
+	avg_nmi = avg_nmi/num_files
+
+	dev_c = (dev_c/num_files - avg_c**2)**0.5
+	dev_h = (dev_h/num_files - avg_h**2)**0.5
+	dev_vm = (dev_vm/num_files - avg_vm**2)**0.5
+	dev_nmi = (dev_nmi/num_files - avg_nmi**2)**0.5
+	puts "----------------------------------------------------------"
+	puts "Measure\t\tAvg.\t\t\tSD."
+	puts "----------------------------------------------------------"
+	puts "Completeness:\t#{avg_c} ,\t#{dev_c}\nHomogenity:\t#{avg_h} ,\t#{dev_h}"
+	puts "V-measure:\t#{avg_vm} ,\t#{dev_vm}\nNMI:\t\t#{avg_nmi} ,\t#{dev_nmi}"
+
 end
 # path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/polblogs/'
 # Dataset.create_dataset_from_gml_file(
@@ -746,4 +862,5 @@ end
 # Dataset.convert_cluster_file clusters_input: "/home/vahid/Desktop/tcd_#{snap_dataset_name.downcase}5000.clu"
 # Dataset.convert_cluster_file clusters_input: "/home/vahid/Desktop/1.clu"
 # Dataset.convert_gen_cluster_file clusters_input: "/home/vahid/Desktop/g1.gr.clu"
-run(ARGV)
+# run(ARGV)
+run2
