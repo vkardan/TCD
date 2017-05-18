@@ -356,7 +356,7 @@ class Dataset
 		vm = v_measure homo: homo, comp: comp
 		nmi = nmi_measure a: a, k: k.keys, c: c.keys, n: graph.size
 		puts "V-measure: #{vm} , NMI: #{nmi}"
-		return {c: comp, h: homo, vm: vm, nmi: nmi}
+		return {c: comp, h: homo, vm: vm, nmi: nmi, c_count: c.keys.count, k_count: k.keys.count}
 	end
 
 	def evaluate2(real_classes_path:, clusters_path:)
@@ -411,7 +411,7 @@ class Dataset
 		vm = v_measure homo: homo, comp: comp
 		nmi = nmi_measure a: a, k: k.keys, c: c.keys, n: graph.size
 		puts "V-measure: #{vm} , NMI: #{nmi}"
-		return {c: comp, h: homo, vm: vm, nmi: nmi}
+		return {c: comp, h: homo, vm: vm, nmi: nmi, c_count: c.keys.count, k_count: k.keys.count}
 	end
 
 private
@@ -675,9 +675,9 @@ def run2
    use 1 for NMI and 2 for ONMI
 
 --input [path], -i [path]:
-   the path to the input clusters file
+   the path to the input clusters files directory
 
---ground-truth [path], -g [path]:
+--ground-truth [path], -t [path]:
    the path to the ground truth clusters file
 EOF
 		  exit 0
@@ -705,11 +705,14 @@ EOF
 	avg_h = 0.0
 	avg_vm = 0.0
 	avg_nmi = 0.0
+	avg_cluster_count = 0.0
+	real_cluster_count = 0
 	
 	dev_c = 0.0
 	dev_h = 0.0
 	dev_vm = 0.0
 	dev_nmi = 0.0
+	dev_cluster_count = 0.0
 
 	puts "=========================================================="
 	Dir[input].each do |name|	
@@ -738,27 +741,33 @@ EOF
 		avg_h += r[:h]
 		avg_vm += r[:vm]
 		avg_nmi += r[:nmi]
+		avg_cluster_count += r[:k_count]
+		real_cluster_count = r[:c_count]
 
 		dev_c += r[:c]**2
 		dev_h += r[:h]**2
 		dev_vm += r[:vm]**2
 		dev_nmi += r[:nmi]**2
+		dev_cluster_count += r[:k_count]**2
 	end
 	num_files = Dir[input].size
 	avg_c = avg_c/num_files
 	avg_h = avg_h/num_files
 	avg_vm = avg_vm/num_files
 	avg_nmi = avg_nmi/num_files
+	avg_cluster_count = avg_cluster_count/num_files
 
 	dev_c = (dev_c/num_files - avg_c**2)**0.5
 	dev_h = (dev_h/num_files - avg_h**2)**0.5
 	dev_vm = (dev_vm/num_files - avg_vm**2)**0.5
 	dev_nmi = (dev_nmi/num_files - avg_nmi**2)**0.5
+	dev_cluster_count = (dev_cluster_count/num_files - avg_cluster_count**2)**0.5
 	puts "----------------------------------------------------------"
 	puts "Measure\t\tAvg.\t\t\tSD."
 	puts "----------------------------------------------------------"
 	puts "Completeness:\t#{avg_c} ,\t#{dev_c}\nHomogenity:\t#{avg_h} ,\t#{dev_h}"
 	puts "V-measure:\t#{avg_vm} ,\t#{dev_vm}\nNMI:\t\t#{avg_nmi} ,\t#{dev_nmi}"
+	puts "No. Clusters:\t#{avg_cluster_count} ,\t\t\t#{dev_cluster_count}\nNo. Classes:\t#{real_cluster_count}"
 
 end
 # path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/polblogs/'
