@@ -37,7 +37,7 @@ nx.set_node_attributes(G, None, 'cluster_id')
 
 print ("Start community detection algorithm...")
 start = time.time()
-clusters_dic = tcd.community_detection(G, 2.1, 0.95, 3)
+clusters_dic = tcd.community_detection(G, 3, 0.95, 3)
 end = time.time()
 print ("Clustering is finished in %d s ." % (end - start))
 
@@ -47,7 +47,6 @@ print ("Clustering is finished in %d s ." % (end - start))
 node_cluster_labels = nx.get_node_attributes(G, 'cluster_id')
 node_cluster_labels = sorted(node_cluster_labels.items(), key=operator.itemgetter(0))
 node_cluster_labels = [x[1] for x in node_cluster_labels]
-#node_cluster_labels = list(node_cluster_labels.values())
 print(node_cluster_labels)
 
 #setting the labels for node_cluster_labels

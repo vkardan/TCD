@@ -1,116 +1,58 @@
+import numpy as np
+import community
 import networkx as nx
-import collections
+import time
+import matplotlib.pyplot as plt
+import argparse
 import operator
+import tcd_tools
 
-#TODO finish the second phase
-def community_detection(graph, epsilon, beta, alpha):
-	sorted_nodes = sort_nodes_based_on_degrees(graph)
-	clusters_dic = {}
-	for selected_node_id in sorted_nodes :
-		if graph.nodes[selected_node_id]['cluster_id'] == None :
-			tclass = get_tolerance_class(graph, selected_node_id, epsilon)
-			new_cluster = []
-			for node_id in tclass :
-				if graph.nodes[node_id]['cluster_id'] == None :
-					new_cluster.append(node_id)
-			close_cluster_ids = get_close_cluster_ids(clusters_dic, tclass, beta)
-			temp = []
-			for cluster_id in close_cluster_ids :
-				temp = temp + clusters_dic[cluster_id]
-				del clusters_dic[cluster_id]
-			new_cluster = union(new_cluster, temp)
-			new_cluster_id = new_cluster[0]
-			clusters_dic[new_cluster_id] = new_cluster
-			for node_id in new_cluster :
-				graph.nodes[node_id]['cluster_id'] = new_cluster_id
+from sklearn.metrics.cluster import normalized_mutual_info_score as nmi_score
+from sklearn.metrics.cluster import v_measure_score as v_score
 
-	for cid, cluster in list(clusters_dic.items()) :
-		if len(cluster) < alpha :
-			nearest_cid = find_nearest_cluster_id(graph, cluster, epsilon)
-			clusters_dic[nearest_cid] = clusters_dic[nearest_cid] + cluster
-			for node_id in cluster :
-				graph.nodes[node_id]['cluster_id'] = nearest_cid
-			del clusters_dic[cid]
-		
-	return clusters_dic
+parser = argparse.ArgumentParser(description='Run a community detection algorithm on a dataset.')
+parser.add_argument('fnl', nargs='?', type=int, default=1)
+parser.add_argument('-g', '--graph', nargs=1)
+parser.add_argument('-t', '--ground_truth', nargs=1)
+args = parser.parse_args()
 
-def sort_nodes_based_on_degrees(graph):
-	res = list(nx.degree(graph))
-	res.sort(key=operator.itemgetter(1))
-	return [x[0] for x in res]
-	
-def get_tolerance_class(graph, start_node, epsilon):
-	root, tclass, selected_index = start_node, [], 0
-	while True :
-		neighborhood = bfs(graph, root, epsilon)
-		if selected_index != 0 :
-			tclass = intersection(tclass, neighborhood)
-		else :
-			tclass = neighborhood
-		if selected_index < len(tclass)-1 :
-			selected_index += 1
-			root = tclass[selected_index]
-		else:
-			break
-	return tclass	
+#the labels of the nodes have to be consicutive positive integers 
+first_node_label = args.fnl
 
-def get_close_cluster_ids(clusters_dic, tclass, beta):
-	res = []
-	for cluster_id, cluster in list(clusters_dic.items()) :
-		if calc_closeness(tclass, cluster) > beta :
-			res.append(cluster_id)
-	return res		 
+#dataset properties
+graph_file = args.graph[0]
+ground_truth_file = args.ground_truth[0]
 
-#TODO define a dictionary
-def find_nearest_cluster_id(graph, cluster, epsilon):
-	chosen_id = None
-	counter = dict([(chosen_id, 0)])
-	original_cluster_id = graph.nodes[cluster[0]]['cluster_id']
-	for vertex in cluster :
-		neighborhood = bfs(graph, vertex, epsilon)
-		for node_id in neighborhood:
-			cid = graph.nodes[node_id]['cluster_id']
-			if cid != original_cluster_id :
-				if cid in counter :				
-					counter[cid] += 1
-				else:
-					counter[cid] = 1
-				if counter[cid] > counter[chosen_id] :
-					chosen_id = cid
-	return chosen_id
+print("#####################################################")
+print("Loading Graph...")
+start = time.time()
+fh=open(graph_file, 'rb')
+G=nx.read_edgelist(fh, nodetype=int)
+fh.close()
+end = time.time()
+print("Graph loaded in %d s ." % (end - start))
 
-def calc_closeness(set1, set2):
-	nodes_in_common = 0.0
-	for node in set1 :
-		if  node in set2:
-			nodes_in_common += 1.0
-	return nodes_in_common/min(len(set1), len(set2))
-	
-def bfs(graph, root, epsilon):
-	seen, queue, depth_queue = set([root]), collections.deque([root]), collections.deque([0])
-	while queue :
-		vertex = queue.popleft()
-		depth = depth_queue.popleft()
-		for node in nx.all_neighbors(graph, vertex):
-			if node not in seen:
-				future_depth = depth + graph[vertex][node]['weight']
-				if future_depth < epsilon :
-					seen.add(node)
-					queue.append(node)
-					depth_queue.append(future_depth)
-	return list(seen)
+nx.set_edge_attributes(G, 1, 'weight')
+nx.set_node_attributes(G, None, 'cluster_id')
 
-def union(set1, set2):
-	res = set1	
-	for node in set2 :
-		if  node not in set1:
-			res.append(node)
-	return res
+print ("Start community detection algorithm...")
+start = time.time()
+clusters_dic = tcd_tools.community_detection(G, 3, 0.95, 3)
+end = time.time()
+print ("Clustering is finished in %d s ." % (end - start))
 
-def intersection(set1, set2):
-	res = []	
-	for node in set1 :
-		if  node in set2:
-			res.append(node)
-	return res
+node_cluster_labels_dic = nx.get_node_attributes(G, 'cluster_id')
+node_cluster_labels = sorted(node_cluster_labels_dic.items(), key=operator.itemgetter(0))
+node_cluster_labels = [x[1] for x in node_cluster_labels]
+print(node_cluster_labels)
+
+ground_truth = np.loadtxt(ground_truth_file, delimiter=' ', dtype='int')
+nodes_class_labels = ground_truth[:,1]
+
+print("Modularity Score:\t%.2f" % community.modularity(node_cluster_labels_dic, G))
+print("NMI Score:\t%.2f" % nmi_score(nodes_class_labels, node_cluster_labels))
+print("V Score:\t%.2f" % v_score(nodes_class_labels, node_cluster_labels))
+print("Cluster#:\t%d" % len(clusters_dic))
+print("#####################################################")
+
 
