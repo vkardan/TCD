@@ -574,6 +574,8 @@ def run(params)
 			'football'
 		when 'am'
 			'amazon'
+		when 'y5'
+			'youtube5000'
 		when 'gd'
 			'generated/directed'
 		when 'gu'
@@ -873,3 +875,13 @@ end
 # Dataset.convert_gen_cluster_file clusters_input: "/home/vahid/Desktop/g1.gr.clu"
 # run(ARGV)
 run2
+# snap_dataset_name = "Amazon"
+# path = "/home/vahid/Desktop/#{snap_dataset_name}/"
+# Dataset.create_dataset_from_snap_file(
+# 	graph_input: path+"com-#{snap_dataset_name.downcase}.ungraph.txt", 
+# 	clusters_input: path+"#{snap_dataset_name.downcase}5000.clu",
+# 	graph_path: path+"n/#{snap_dataset_name.downcase}5000.txt", 
+# 	clusters_path: path+"n/#{snap_dataset_name.downcase}5000.clu",
+# 	directed: false,
+# 	first_node_id: 1
+# )
