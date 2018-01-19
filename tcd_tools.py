@@ -2,6 +2,7 @@ import networkx as nx
 import collections
 import operator
 
+# main function
 def community_detection(graph, epsilon, beta, alpha):
 	sorted_nodes = sort_nodes_based_on_degrees(graph)
 	clusters_dic = {}

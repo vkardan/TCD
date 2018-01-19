@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import argparse
 import operator
 import tcd_tools
+import objective_functions as objf
 
 from sklearn.metrics.cluster import normalized_mutual_info_score as nmi_score
 from sklearn.metrics.cluster import v_measure_score as v_score
@@ -24,24 +25,45 @@ graph_file = args.graph[0]
 ground_truth_file = args.ground_truth[0]
 
 print("#####################################################")
-print("Loading Graph...")
+print("Loading Graph ... ", end='')
 start = time.time()
 fh=open(graph_file, 'rb')
 G=nx.read_edgelist(fh, nodetype=int)
 fh.close()
 end = time.time()
-print("Graph loaded in %d s ." % (end - start))
+print("finished in %d s ." % (end - start))
 
 nx.set_edge_attributes(G, 1, 'weight')
-nx.set_node_attributes(G, None, 'cluster_id')
 
-print ("Start community detection algorithm...")
-start = time.time()
-clusters_dic = tcd_tools.community_detection(G, 3, 0.95, 3)
-end = time.time()
-print ("Clustering is finished in %d s ." % (end - start))
+print("Start Searching for the best clustering:")
+g_start = time.time()
+b_obj_val, b_alpha, b_beta, b_epsilon = 0, None, None, None
+clusters_dic = {}
+node_cluster_labels_dic = {}
+for epsilon in range(2, 6):
+	for alpha in range(3, 15):
+		for b in range(5, 20):
+			beta = b/20.0
+			nx.set_node_attributes(G, None, 'cluster_id')
 
-node_cluster_labels_dic = nx.get_node_attributes(G, 'cluster_id')
+			print ("Detecting communities ... ", end='')
+			start = time.time()
+			clusters_dic = tcd_tools.community_detection(G, epsilon, beta, alpha)
+			end = time.time()
+			print ("finished in %d s ." % (end - start))
+
+			print ("Estimating the quality of clusters ... ", end='')			
+			cluster_count = len(clusters_dic)
+			node_cluster_labels_dic = nx.get_node_attributes(G, 'cluster_id')
+			obj_val = objf.obj_function(G, node_cluster_labels_dic, cluster_count, epsilon, beta, alpha)
+			if obj_val > b_obj_val :
+				b_obj_val, b_alpha, b_beta, b_epsilon = obj_val, alpha, beta, epsilon
+			print ("finished in %d s ." % (end - start))
+
+g_end = time.time()
+print("Search is finished in %d s ." % (g_end - g_start))
+print("Best parameters: \ne:\t%d\nb:\t%.2f\na:\t%d" % (b_epsilon, b_beta, b_alpha) )
+
 node_cluster_labels = sorted(node_cluster_labels_dic.items(), key=operator.itemgetter(0))
 node_cluster_labels = [x[1] for x in node_cluster_labels]
 print(node_cluster_labels)
