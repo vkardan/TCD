@@ -46,16 +46,18 @@ for epsilon in range(2, 6):
 			beta = b/20.0
 			nx.set_node_attributes(G, None, 'cluster_id')
 
-			print ("Detecting communities ... ", end='')
+			print ("Detecting communities with (a, b, e) as (%d, %.2f, %d)... " % (alpha, beta, epsilon), end='')
 			start = time.time()
 			clusters_dic = tcd_tools.community_detection(G, epsilon, beta, alpha)
 			end = time.time()
 			print ("finished in %d s ." % (end - start))
 
-			print ("Estimating the quality of clusters ... ", end='')			
+			print ("Estimating the quality of clusters ..." , end='')			
 			cluster_count = len(clusters_dic)
 			node_cluster_labels_dic = nx.get_node_attributes(G, 'cluster_id')
-			obj_val = objf.obj_function(G, node_cluster_labels_dic, cluster_count, epsilon, beta, alpha)
+			
+			obj_val = objf.obj_function(G, list(clusters_dic.values()), node_cluster_labels_dic, cluster_count, epsilon, beta, alpha)
+			print(obj_val)
 			if obj_val > b_obj_val :
 				b_obj_val, b_alpha, b_beta, b_epsilon = obj_val, alpha, beta, epsilon
 			print ("finished in %d s ." % (end - start))
@@ -64,6 +66,14 @@ g_end = time.time()
 print("Search is finished in %d s ." % (g_end - g_start))
 print("Best parameters: \ne:\t%d\nb:\t%.2f\na:\t%d" % (b_epsilon, b_beta, b_alpha) )
 
+nx.set_node_attributes(G, None, 'cluster_id')
+print ("Detecting communities with best parameters... ", end='')
+start = time.time()
+clusters_dic = tcd_tools.community_detection(G, b_epsilon, b_beta, b_alpha)
+end = time.time()
+print ("finished in %d s ." % (end - start))
+
+node_cluster_labels_dic = nx.get_node_attributes(G, 'cluster_id')
 node_cluster_labels = sorted(node_cluster_labels_dic.items(), key=operator.itemgetter(0))
 node_cluster_labels = [x[1] for x in node_cluster_labels]
 print(node_cluster_labels)

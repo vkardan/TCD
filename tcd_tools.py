@@ -25,10 +25,10 @@ def community_detection(graph, epsilon, beta, alpha):
 				graph.nodes[node_id]['cluster_id'] = new_cluster_id
 
 	for cid, cluster in list(clusters_dic.items()) :
-		if len(cluster) < alpha :
-			nearest_cid = find_nearest_cluster_id(graph, cluster, epsilon)
-			clusters_dic[nearest_cid] = clusters_dic[nearest_cid] + cluster
-			for node_id in cluster :
+		if cid in clusters_dic and len(clusters_dic[cid]) < alpha :
+			nearest_cid = find_nearest_cluster_id(graph, clusters_dic[cid], epsilon)
+			clusters_dic[nearest_cid] = clusters_dic[nearest_cid] + clusters_dic[cid]
+			for node_id in clusters_dic[cid] :
 				graph.nodes[node_id]['cluster_id'] = nearest_cid
 			del clusters_dic[cid]
 		
