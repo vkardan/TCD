@@ -1,5 +1,6 @@
 import community as cm
 import networkx as nx
+import collections
 
 def obj_function(graph, partition, node_clusters_dic, cluster_count, epsilon, beta, alpha, amin=3, amax=17, bmin=0.25, bmax=0.95, emin=3, emax=5, etha=0.5):
 	node_count = graph.number_of_nodes()
@@ -14,7 +15,7 @@ def obj_function(graph, partition, node_clusters_dic, cluster_count, epsilon, be
 	modularity = cm.modularity(node_clusters_dic, graph)
 
 	coverage = nx.algorithms.community.quality.coverage(graph, partition)
-	return etha*modularity + (1 - etha)*coverage
+	return (1-etha)*coverage + etha*modularity
 
 def min_max_norm(value, minv, maxv):
 	return float(value - minv)/(maxv - minv)
@@ -23,7 +24,7 @@ def partial_density(graph):
 	seen, visited, queue, weight, cluster_counter = set([]), set([]), collections.deque([]), 0.0, 0
 	for root in list(graph.nodes()):
 		if root not in visited :
-			seen.add(node)
+			seen.add(root)
 			queue.append(root)
 			cluster_id = graph.nodes[root]['cluster_id']
 			cluster_counter += 1
@@ -32,13 +33,21 @@ def partial_density(graph):
 			while queue :
 				vertex = queue.popleft()
 				for node in nx.all_neighbors(graph, vertex):
-					if graph.nodes[node]['cluster_id'] == cluster_id:
+					if graph.nodes[node]['cluster_id'] == cluster_id and node not in visited:
+						par_weight += graph[vertex][node]['weight']
 						if node not in seen:	
 							seen.add(node)
 							queue.append(node)
 							mem_counter += 1
-						if node not in visited:
-							par_weight += graph[vertex][node]['weight']
 				visited.add(vertex)
-			weight += 2*par_weight/(mem_counter*(mem_counter-1))
+			if mem_counter > 1 :
+				weight += 2*par_weight/(mem_counter*(mem_counter-1))
+			else:
+				weight += 1
 	return weight/cluster_counter
+
+
+
+
+
+
