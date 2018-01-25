@@ -1,9 +1,47 @@
 import networkx as nx
 import collections
 import operator
+import time
+import tools
+import objective_functions as objf
 
-# main function
-def community_detection(graph, epsilon, beta, alpha):
+def parameter_selection(graph):
+	print("Start Searching for the best clustering:")
+	g_start = time.time()
+	b_obj_val, b_alpha, b_beta, b_epsilon = 0, None, None, None
+	clusters_dic = {}
+	node_cluster_labels_dic = {}
+	bp_list = []
+	for epsilon in range(2, 6):
+		for alpha in range(3, 15):
+			for b in range(5, 20):
+				beta = b/20.0
+
+				clusters_list = tools.community_detection_wrapper(tcd, graph, alpha, beta, epsilon)
+			
+				print ("Estimating the quality of clusters ... " , end='')
+				start = time.time()					
+				cluster_count = len(clusters_dic)
+				node_cluster_labels_dic = nx.get_node_attributes(graph, 'cluster_id')
+				
+				obj_val = objf.obj_function(graph, clusters_list, node_cluster_labels_dic, cluster_count, epsilon, beta, alpha)
+				if obj_val > b_obj_val :
+					b_obj_val, b_alpha, b_beta, b_epsilon = obj_val, alpha, beta, epsilon
+					bp_list = [(alpha, beta, epsilon)]
+				elif obj_val == b_obj_val :
+					bp_list.append((alpha, beta, epsilon))
+				end = time.time()
+				print ("finished in %d s, O: %f" % ((end - start), obj_val))
+
+	g_end = time.time()
+	print("Search is finished in %d s ." % (g_end - g_start))
+	print("Best parameters: \ne:\t%d\nb:\t%.2f\na:\t%d" % (b_epsilon, b_beta, b_alpha) )
+	print("#####################################################")
+
+	return bp_list
+
+def tcd(graph, alpha, beta, epsilon):
+	nx.set_node_attributes(graph, None, 'cluster_id')
 	sorted_nodes = sort_nodes_based_on_degrees(graph)
 	clusters_dic = {}
 	for selected_node_id in sorted_nodes :
@@ -30,9 +68,8 @@ def community_detection(graph, epsilon, beta, alpha):
 			clusters_dic[nearest_cid] = clusters_dic[nearest_cid] + clusters_dic[cid]
 			for node_id in clusters_dic[cid] :
 				graph.nodes[node_id]['cluster_id'] = nearest_cid
-			del clusters_dic[cid]
-		
-	return clusters_dic
+			del clusters_dic[cid]		
+	return list(clusters_dic.values())
 
 def sort_nodes_based_on_degrees(graph):
 	res = list(nx.degree(graph))
@@ -112,4 +149,6 @@ def intersection(set1, set2):
 		if  node in set2:
 			res.append(node)
 	return res
+
+
 

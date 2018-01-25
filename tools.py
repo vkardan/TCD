@@ -1,7 +1,10 @@
 import numpy as np
+import time
 import networkx as nx
 import matplotlib.pyplot as plt
 import sklearn.metrics.cluster as metric
+
+from networkx.algorithms import community as com
 #from sklearn.metrics.cluster import normalized_mutual_info_score as nmi_score
 #from sklearn.metrics.cluster import v_measure_score as v_score
 
@@ -22,9 +25,7 @@ def draw_network(graph, clusters_list):
 	plt.axis('off')
 	plt.show()
 
-def evaluation(ground_truth_file, node_cluster_labels):
-	ground_truth = np.loadtxt(ground_truth_file, delimiter=' ', dtype='int')
-	nodes_class_labels = ground_truth[:,1]
+def evaluation(nodes_class_labels, node_cluster_labels, cluster_count):
 
 	c = metric.completeness_score(nodes_class_labels, node_cluster_labels)
 	h = metric.homogeneity_score(nodes_class_labels, node_cluster_labels)
@@ -34,5 +35,23 @@ def evaluation(ground_truth_file, node_cluster_labels):
 	print("h Score:\t%.3f" % h)
 	print("V Score:\t%.3f" % v)
 	print("NMI Score:\t%.3f" % nmi)
+	print("Cluster#:\t%d" % cluster_count)
+	print("#####################################################")
 
 	return {'c':c, 'h':h, 'v':v, 'nmi':nmi}
+
+def community_detection_wrapper(algo_name, graph, *params):
+	print ("Start %s%s Algorithm ... " % ((algo_name.__name__).upper(), str(params)), end='')
+	start = time.time()
+	res = algo_name(graph, *params)
+	end = time.time()
+	print ("finished in %d s ." % (end - start))
+	
+	return res 
+
+def afa(graph, k): return list(com.asyn_fluidc(graph, k))
+
+
+def sslpa(graph): return list(com.label_propagation.label_propagation_communities(graph))
+
+
