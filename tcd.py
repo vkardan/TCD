@@ -2,15 +2,15 @@ import numpy as np
 import community
 import networkx as nx
 import time
-import matplotlib.pyplot as plt
 import argparse
 import operator
-import tcd_tools
-import objective_functions as objf
 
 from sklearn.metrics.cluster import normalized_mutual_info_score as nmi_score
 from sklearn.metrics.cluster import v_measure_score as v_score
 
+import tools
+import tcd_tools
+import objective_functions as objf
 
 #########################################################################################################################
 
@@ -27,9 +27,7 @@ def run_tcd(graph, nodes_class_labels, alpha, beta, epsilon):
 	node_cluster_labels = [x[1] for x in node_cluster_labels]
 	#print(node_cluster_labels)
 
-	print("Modularity Score:\t%.2f" % community.modularity(node_cluster_labels_dic, G))
-	print("NMI Score:\t%.2f" % nmi_score(nodes_class_labels, node_cluster_labels))
-	print("V Score:\t%.2f" % v_score(nodes_class_labels, node_cluster_labels))
+	tools.evaluation(nodes_class_labels, node_cluster_labels)
 	print("Cluster#:\t%d" % len(clusters_dic))
 	print("#####################################################")
 
@@ -75,19 +73,6 @@ def parameter_selection(G):
 
 	return bp_list
 
-def draw_network(graph, clusters_dic):
-	size = float(len(clusters_dic))
-	pos = nx.spring_layout(graph)
-	cluster_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 
-				'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan', 'xkcd:light navy', 'xkcd:ivory', 'xkcd:light cyan']
-	cluster_shapes = "so^>v<dph8"
-	cc = 0
-	for key, com in clusters_dic.items() :
-		nx.drawing.nx_pylab.draw_networkx_nodes(graph, pos, com, node_size = 40, node_color = cluster_colors[cc])
-		cc += 1
-	nx.drawing.nx_pylab.draw_networkx_edges(graph, pos, alpha=0.5)
-	plt.show()
-
 ##########################################################################################################################################
 
 parser = argparse.ArgumentParser(description='Run a community detection algorithm on a dataset.')
@@ -130,7 +115,7 @@ clusters_dic = {}
 for params in bp_list:
 	clusters_dic = run_tcd(G, nodes_class_labels, params[0], params[1], params[2])
 
-draw_network(G, clusters_dic)
+tools.draw_network( G, list( clusters_dic.values() ) )
 
 
 
