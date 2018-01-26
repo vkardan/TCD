@@ -25,20 +25,21 @@ def draw_network(graph, clusters_list):
 	plt.axis('off')
 	plt.show()
 
-def evaluation(nodes_class_labels, node_cluster_labels, cluster_count):
+def evaluation(nodes_class_labels, clusters_list, node_count, first_node_label, p=2):
 
-	c = metric.completeness_score(nodes_class_labels, node_cluster_labels)
-	h = metric.homogeneity_score(nodes_class_labels, node_cluster_labels)
-	v = metric.v_measure_score(nodes_class_labels, node_cluster_labels)
-	nmi = metric.normalized_mutual_info_score(nodes_class_labels, node_cluster_labels)
-	print("c Score:\t%.3f" % c)
-	print("h Score:\t%.3f" % h)
-	print("V Score:\t%.3f" % v)
-	print("NMI Score:\t%.3f" % nmi)
-	print("Cluster#:\t%d" % cluster_count)
-	print("#####################################################")
+	#initializing the array of cluster labels for the nodes
+	node_cluster_labels = [0]*node_count
+	for i in range(len(clusters_list)): 
+		for j in clusters_list[i]:
+			node_cluster_labels[j-first_node_label] = i + 1
 
-	return {'c':c, 'h':h, 'v':v, 'nmi':nmi}
+	c = round(metric.completeness_score(nodes_class_labels, node_cluster_labels), p)
+	h = round(metric.homogeneity_score(nodes_class_labels, node_cluster_labels), p)
+	v = round(metric.v_measure_score(nodes_class_labels, node_cluster_labels), p)
+	nmi = round(metric.normalized_mutual_info_score(nodes_class_labels, node_cluster_labels), p)
+	nc = len(clusters_list)
+	print_eval_result(c, h, v, nmi, nc)
+	return (c, h, v, nmi, nc)
 
 def community_detection_wrapper(algo_name, graph, *params):
 	print ("Start %s%s Algorithm ... " % ((algo_name.__name__).upper(), str(params)), end='')
@@ -53,5 +54,8 @@ def afa(graph, k): return list(com.asyn_fluidc(graph, k))
 
 
 def sslpa(graph): return list(com.label_propagation.label_propagation_communities(graph))
+
+def print_eval_result(c, h, v, nmi, nc): print("c Score:\t{}\nh Score:\t{}\nV Score:\t{}\nNMI Score:\t{}\nCluster#:\t{}".format(c, h, v, nmi, nc))
+
 
 
