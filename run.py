@@ -4,6 +4,7 @@ import networkx as nx
 import time
 import argparse
 import operator
+import pickle
 
 from networkx.algorithms import community as com
 from sklearn.metrics.cluster import normalized_mutual_info_score as nmi_score
@@ -49,6 +50,7 @@ print("finished in %d s ." % (end - start))
 
 nx.set_edge_attributes(graph, 1, 'weight')
 node_count = graph.number_of_nodes()
+
 ground_truth = np.loadtxt(ground_truth_file, delimiter=' ', dtype='int')
 nodes_class_labels = ground_truth[:,1]
 
@@ -76,10 +78,18 @@ for r in range(args.repeat[0]):
 print("################# Average Measures #################")
 print("####################################################")
 (ac, ah, av, anmi, nc) = map(operator.truediv, (ac, ah, av, anmi, nc), [args.repeat[0]]*5)
+(ac, ah, av, anmi, nc) = map( lambda x: round(x, 2), (ac, ah, av, anmi, nc))
 tools.print_eval_result(ac, ah, av, anmi, nc)
 print("####################################################")
 
-tools.draw_network( graph, clusters_list )
+#pos = nx.spring_layout(graph, iterations=50)
+#print(pos)
+#with open('file.pickle', 'wb') as file:
+#     pickle.dump(pos, file)
+pos = None
+with open('dolphins.pickle', 'rb') as handle:
+	  pos = pickle.load(handle)
+tools.draw_network( graph, clusters_list, ground_truth, pos )
 
 
 

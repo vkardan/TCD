@@ -5,19 +5,19 @@ import matplotlib.pyplot as plt
 import sklearn.metrics.cluster as metric
 
 from networkx.algorithms import community as com
-#from sklearn.metrics.cluster import normalized_mutual_info_score as nmi_score
-#from sklearn.metrics.cluster import v_measure_score as v_score
 
-def draw_network(graph, clusters_list):
+#TODO shape of nodes should be based on ground truth
+def draw_network(graph, clusters_list, node_classes, pos):
 	size = float(len(clusters_list))
-	pos = nx.spring_layout(graph)
 	cluster_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 
 				'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan', 'xkcd:light navy', 'xkcd:ivory', 'xkcd:light cyan']
 	cluster_shapes = "so^>v<dph8"
 	cc = 0
 	for com in clusters_list :
-		temp = nx.drawing.nx_pylab.draw_networkx_nodes(graph, pos, com, node_size = 175, node_color = cluster_colors[cc], linewidths = 0.75)
-		temp.set_edgecolor('k')
+		for node in com :
+			temp = nx.drawing.nx_pylab.draw_networkx_nodes(graph, pos, [node], node_size = 175, 
+				node_color = cluster_colors[cc], linewidths = 0.75,  node_shape = 'o')
+			temp.set_edgecolor('k')
 		cc += 1
 	nx.drawing.nx_pylab.draw_networkx_edges(graph, pos, alpha=0.5)
 	nx.draw_networkx_labels(graph, pos, font_size=9, font_color='k', font_family = 'Latin Modern Roman Demi')
