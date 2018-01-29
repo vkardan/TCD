@@ -21,23 +21,29 @@ import tcd_tools
 
 parser = argparse.ArgumentParser(description='Run a community detection algorithm on a dataset.')
 parser.add_argument('fnl', nargs='?', type=int, default=1)
-parser.add_argument('-g', '--graph', nargs=1)
-parser.add_argument('-t', '--ground_truth', nargs=1)
+parser.add_argument('-dp', '--dataset_path', nargs=1)
+parser.add_argument('-dn', '--dataset_name', nargs=1)
 parser.add_argument('-m', '--method', nargs=1, type=str, default='tcd')
-parser.add_argument('-s', '--search', action='store_true')
 parser.add_argument('-e', '--epsilon', nargs=1, type=int, default=2)
 parser.add_argument('-b', '--beta', nargs=1, type=float, default=0.5)
 parser.add_argument('-a', '--alpha', nargs=1, type=int, default=3)
 parser.add_argument('-k', nargs=1, type=int, default=2)
 parser.add_argument('-r', '--repeat', nargs=1, type=int, default=1)
+
+parser.add_argument('-s', '--search', action='store_true')
+parser.add_argument('-cp', '--creat_pickle_file', action='store_true')
+parser.add_argument('-up', '--use_pickle_file', action='store_true')
 args = parser.parse_args()
 
 #the labels of the nodes have to be consicutive positive integers 
 first_node_label = args.fnl
 
 #dataset properties
-graph_file = args.graph[0]
-ground_truth_file = args.ground_truth[0]
+working_path = args.dataset_path[0]
+dataset_name = args.dataset_name[0]
+graph_file = working_path +'/'+dataset_name+'.txt'
+ground_truth_file = working_path +'/'+dataset_name+'.clu'
+pickle_file = working_path +'/'+dataset_name+'.pickle'
 
 print("####################################################")
 print("Loading Graph ... ", end='')
@@ -72,6 +78,11 @@ for r in range(args.repeat[0]):
 			clusters_list = list(tools.community_detection_wrapper(tools.sslpa, graph))
 		elif args.method[0] == 'afa':
 			clusters_list = list(tools.community_detection_wrapper(tools.afa, graph, args.k[0] ))
+		elif args.method[0] == 'gn':
+			clusters_list = list(tools.community_detection_wrapper(tools.gn, graph))
+		elif args.method[0] == 'louvain':
+			clusters_list = list(tools.community_detection_wrapper(tools.louvain, graph))
+			print(clusters_list)
 	eval_measures = tools.evaluation(nodes_class_labels, clusters_list, node_count, first_node_label)
 	(ac, ah, av, anmi, anc) = map(operator.add, (ac, ah, av, anmi, anc), eval_measures)
 	(sdc, sdh, sdv, sdnmi, sdnc) = map(operator.add, (sdc, sdh, sdv, sdnmi, sdnc), map(operator.mul, eval_measures, eval_measures))
@@ -89,13 +100,16 @@ print("################ Standard Deviation ################")
 print("####################################################")
 tools.print_eval_result(sdc, sdh, sdv, sdnmi, sdnc)
 print("####################################################")
-#pos = nx.spring_layout(graph, iterations=50)
-#print(pos)
-#with open('file.pickle', 'wb') as file:
-#     pickle.dump(pos, file)
-pos = None
-with open('dolphins.pickle', 'rb') as handle:
-	  pos = pickle.load(handle)
+
+if args.use_pickle_file == True:	
+	with open(pickle_file, 'rb') as handle:
+		pos = pickle.load(handle)
+else:
+	pos = nx.spring_layout(graph, iterations=50)
+	if args.creat_pickle_file == True:
+		with open(pickle_file, 'wb') as file:
+			pickle.dump(pos, file)
+
 tools.draw_network( graph, clusters_list, ground_truth, pos )
 
 

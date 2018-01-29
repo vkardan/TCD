@@ -3,26 +3,29 @@ import time
 import networkx as nx
 import matplotlib.pyplot as plt
 import sklearn.metrics.cluster as metric
-
+import community
 from networkx.algorithms import community as com
 
 #TODO shape of nodes should be based on ground truth
 def draw_network(graph, clusters_list, node_classes, pos):
 	size = float(len(clusters_list))
 	cluster_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 
-				'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan', 'xkcd:light navy', 'xkcd:ivory', 'xkcd:light cyan']
+				'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan', 'xkcd:poop', 'xkcd:ivory', 'xkcd:light cyan', 'xkcd:mint']
 	cluster_shapes = "so^>v<dph8"
 	nx.set_node_attributes(graph, dict(node_classes), 'class')
 
 	cc = 0
 	for com in clusters_list :
 		for node in com :
-			temp = nx.drawing.nx_pylab.draw_networkx_nodes(graph, pos, [node], node_size = 175, 
-				node_color = cluster_colors[cc], linewidths = 0.75,  node_shape = cluster_shapes[graph.nodes[node]['class']])
+			node_class = graph.nodes[node]['class']
+			shape = cluster_shapes[node_class%len(cluster_shapes)]
+			size = 100*node_class/len(cluster_shapes) + 100
+			temp = nx.drawing.nx_pylab.draw_networkx_nodes(graph, pos, [node], node_size = size, 
+				node_color = cluster_colors[cc], linewidths = 0.75,  node_shape = shape)
 			temp.set_edgecolor('k')
 		cc += 1
 	nx.drawing.nx_pylab.draw_networkx_edges(graph, pos, alpha=0.5)
-	nx.draw_networkx_labels(graph, pos, font_size=9, font_color='k', font_family = 'Latin Modern Roman Demi')
+#	nx.draw_networkx_labels(graph, pos, font_size=6, font_color='k', font_family = 'Latin Modern Roman Demi')
 
 	plt.axis('off')
 	plt.show()
@@ -56,6 +59,11 @@ def afa(graph, k): return list(com.asyn_fluidc(graph, k))
 
 
 def sslpa(graph): return list(com.label_propagation.label_propagation_communities(graph))
+
+def gn(graph): return list(next(com.girvan_newman(graph)))
+
+#TODO Is not working!
+def louvain(graph): return list(community.best_partition(graph))
 
 def print_eval_result(c, h, v, nmi, nc): print("c Score:\t{}\nh Score:\t{}\nV Score:\t{}\nNMI Score:\t{}\nCluster#:\t{}".format(c, h, v, nmi, nc))
 
