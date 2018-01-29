@@ -55,8 +55,8 @@ ground_truth = np.loadtxt(ground_truth_file, delimiter=' ', dtype='int')
 nodes_class_labels = ground_truth[:,1]
 
 clusters_list = [] 
-ac, ah, av, anmi, nc = 0.0, 0.0, 0.0, 0.0, 0.0
-
+ac, ah, av, anmi, anc = 0.0, 0.0, 0.0, 0.0, 0.0
+sdc, sdh, sdv, sdnmi, sdnc = 0.0, 0.0, 0.0, 0.0, 0.0
 for r in range(args.repeat[0]):
 	if args.method[0] == 'tcd':
 		bp_list = []
@@ -72,16 +72,23 @@ for r in range(args.repeat[0]):
 			clusters_list = list(tools.community_detection_wrapper(tools.sslpa, graph))
 		elif args.method[0] == 'afa':
 			clusters_list = list(tools.community_detection_wrapper(tools.afa, graph, args.k[0] ))
-
-	(ac, ah, av, anmi, nc) = map(operator.add, (ac, ah, av, anmi, nc), tools.evaluation(nodes_class_labels, clusters_list, node_count, first_node_label))
+	eval_measures = tools.evaluation(nodes_class_labels, clusters_list, node_count, first_node_label)
+	(ac, ah, av, anmi, anc) = map(operator.add, (ac, ah, av, anmi, anc), eval_measures)
+	(sdc, sdh, sdv, sdnmi, sdnc) = map(operator.add, (sdc, sdh, sdv, sdnmi, sdnc), map(operator.mul, eval_measures, eval_measures))
 	print("####################################################")
 print("################# Average Measures #################")
 print("####################################################")
-(ac, ah, av, anmi, nc) = map(operator.truediv, (ac, ah, av, anmi, nc), [args.repeat[0]]*5)
-(ac, ah, av, anmi, nc) = map( lambda x: round(x, 2), (ac, ah, av, anmi, nc))
-tools.print_eval_result(ac, ah, av, anmi, nc)
+(ac, ah, av, anmi, anc, sdc, sdh, sdv, sdnmi, sdnc) = map(operator.truediv, (ac, ah, av, anmi, anc, sdc, sdh, sdv, sdnmi, sdnc), [args.repeat[0]]*10)
+(sdc, sdh, sdv, sdnmi, sdnc) = map(operator.sub, (sdc, sdh, sdv, sdnmi, sdnc), map(operator.mul, (ac, ah, av, anmi, anc), (ac, ah, av, anmi, anc)) )
+(sdc, sdh, sdv, sdnmi, sdnc) = map(operator.abs, (sdc, sdh, sdv, sdnmi, sdnc))
+(sdc, sdh, sdv, sdnmi, sdnc) = map(operator.pow, (sdc, sdh, sdv, sdnmi, sdnc), [0.5]*5)
+(ac, ah, av, anmi, anc, sdc, sdh, sdv, sdnmi, sdnc) = map( lambda x: round(x, 2), (ac, ah, av, anmi, anc, sdc, sdh, sdv, sdnmi, sdnc))
+tools.print_eval_result(ac, ah, av, anmi, anc)
 print("####################################################")
-
+print("################ Standard Deviation ################")
+print("####################################################")
+tools.print_eval_result(sdc, sdh, sdv, sdnmi, sdnc)
+print("####################################################")
 #pos = nx.spring_layout(graph, iterations=50)
 #print(pos)
 #with open('file.pickle', 'wb') as file:
