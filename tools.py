@@ -6,25 +6,24 @@ import sklearn.metrics.cluster as metric
 import community
 from networkx.algorithms import community as com
 
-#TODO shape of nodes should be based on ground truth
 def draw_network(graph, clusters_list, node_classes, pos):
 	size = float(len(clusters_list))
 	cluster_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 
 				'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan', 'xkcd:poop', 'xkcd:ivory', 'xkcd:light cyan', 'xkcd:mint']
-	cluster_shapes = "so^>v<dph8"
+	cluster_shapes = "so^dv<p>h8"
 	nx.set_node_attributes(graph, dict(node_classes), 'class')
 
 	cc = 0
 	for com in clusters_list :
 		for node in com :
 			node_class = graph.nodes[node]['class']
-			shape = cluster_shapes[node_class%len(cluster_shapes)]
+			shape = cluster_shapes[node_class%len(cluster_shapes)-1]
 			size = 100*node_class/len(cluster_shapes) + 100
 			temp = nx.drawing.nx_pylab.draw_networkx_nodes(graph, pos, [node], node_size = size, 
 				node_color = cluster_colors[cc], linewidths = 0.75,  node_shape = shape)
 			temp.set_edgecolor('k')
 		cc += 1
-	nx.drawing.nx_pylab.draw_networkx_edges(graph, pos, alpha=0.5)
+	nx.drawing.nx_pylab.draw_networkx_edges(graph, pos, alpha=0.5, width=0.75, edge_color='tab:gray')
 #	nx.draw_networkx_labels(graph, pos, font_size=6, font_color='k', font_family = 'Latin Modern Roman Demi')
 
 	plt.axis('off')

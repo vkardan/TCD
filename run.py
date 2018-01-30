@@ -17,18 +17,19 @@ import tcd_tools
 
 
 
-##########################################################################################################################################
+#########################################################################################################################
 
 parser = argparse.ArgumentParser(description='Run a community detection algorithm on a dataset.')
 parser.add_argument('fnl', nargs='?', type=int, default=1)
 parser.add_argument('-dp', '--dataset_path', nargs=1)
 parser.add_argument('-dn', '--dataset_name', nargs=1)
-parser.add_argument('-m', '--method', nargs=1, type=str, default='tcd')
-parser.add_argument('-e', '--epsilon', nargs=1, type=int, default=2)
-parser.add_argument('-b', '--beta', nargs=1, type=float, default=0.5)
-parser.add_argument('-a', '--alpha', nargs=1, type=int, default=3)
-parser.add_argument('-k', nargs=1, type=int, default=2)
-parser.add_argument('-r', '--repeat', nargs=1, type=int, default=1)
+parser.add_argument('--feed', nargs=1)
+parser.add_argument('-m', '--method', nargs=1, type=str, default=None)
+parser.add_argument('-e', '--epsilon', nargs=1, type=int, default=[2])
+parser.add_argument('-b', '--beta', nargs=1, type=float, default=[0.5])
+parser.add_argument('-a', '--alpha', nargs=1, type=int, default=[3])
+parser.add_argument('-k', nargs=1, type=int, default=[2])
+parser.add_argument('-r', '--repeat', nargs=1, type=int, default=[1])
 
 parser.add_argument('-s', '--search', action='store_true')
 parser.add_argument('-cp', '--creat_pickle_file', action='store_true')
@@ -64,25 +65,40 @@ clusters_list = []
 ac, ah, av, anmi, anc = 0.0, 0.0, 0.0, 0.0, 0.0
 sdc, sdh, sdv, sdnmi, sdnc = 0.0, 0.0, 0.0, 0.0, 0.0
 for r in range(args.repeat[0]):
-	if args.method[0] == 'tcd':
-		bp_list = []
-		if args.search == True:
-			bp_list = tcd_tools.parameter_selection(graph)
-		else:
-			bp_list.append((args.alpha[0], args.beta[0], args.epsilon[0]))
-		for params in bp_list:
-			clusters_list = tools.community_detection_wrapper(tcd_tools.tcd, graph, params[0], params[1], params[2])
-		
-	else: 	
-		if args.method[0] == 'sslpa':	
-			clusters_list = list(tools.community_detection_wrapper(tools.sslpa, graph))
-		elif args.method[0] == 'afa':
-			clusters_list = list(tools.community_detection_wrapper(tools.afa, graph, args.k[0] ))
-		elif args.method[0] == 'gn':
-			clusters_list = list(tools.community_detection_wrapper(tools.gn, graph))
-		elif args.method[0] == 'louvain':
-			clusters_list = list(tools.community_detection_wrapper(tools.louvain, graph))
-			print(clusters_list)
+	if args.method != None:
+		if args.method[0] == 'tcd':
+			bp_list = []
+			if args.search == True:
+				bp_list = tcd_tools.parameter_selection(graph)
+			else:
+				bp_list.append((args.alpha[0], args.beta[0], args.epsilon[0]))
+			for params in bp_list:
+				clusters_list = tools.community_detection_wrapper(tcd_tools.tcd, graph, params[0], params[1], params[2])
+			
+		else: 	
+			if args.method[0] == 'sslpa':	
+				clusters_list = list(tools.community_detection_wrapper(tools.sslpa, graph))
+			elif args.method[0] == 'afa':
+				clusters_list = list(tools.community_detection_wrapper(tools.afa, graph, args.k[0] ))
+			elif args.method[0] == 'gn':
+				clusters_list = list(tools.community_detection_wrapper(tools.gn, graph))
+			#Not working properly!!!
+			elif args.method[0] == 'louvain':
+				clusters_list = list(tools.community_detection_wrapper(tools.louvain, graph))
+				print(clusters_list)
+	else:
+		clusters = np.loadtxt(args.feed[0], delimiter=' ')
+		if first_node_label > 0 and clusters[0][0] == 0:
+			clusters = clusters[1:]
+		clusters_dic = {}
+		for t in clusters:
+			key = int(t[1])
+			value = int(t[0])
+			if key in clusters_dic:
+				clusters_dic[key].append(value)
+			else:
+				clusters_dic[key] = [value]
+		clusters_list = list(clusters_dic.values())
 	eval_measures = tools.evaluation(nodes_class_labels, clusters_list, node_count, first_node_label)
 	(ac, ah, av, anmi, anc) = map(operator.add, (ac, ah, av, anmi, anc), eval_measures)
 	(sdc, sdh, sdv, sdnmi, sdnc) = map(operator.add, (sdc, sdh, sdv, sdnmi, sdnc), map(operator.mul, eval_measures, eval_measures))
