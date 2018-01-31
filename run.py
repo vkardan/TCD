@@ -5,6 +5,7 @@ import time
 import argparse
 import operator
 import pickle
+import os
 
 from networkx.algorithms import community as com
 from sklearn.metrics.cluster import normalized_mutual_info_score as nmi_score
@@ -61,11 +62,13 @@ node_count = graph.number_of_nodes()
 ground_truth = np.loadtxt(ground_truth_file, delimiter=' ', dtype='int')
 nodes_class_labels = ground_truth[:,1]
 
-clusters_list = [] 
+clusters_list = []
+repeat = 0
 ac, ah, av, anmi, anc = 0.0, 0.0, 0.0, 0.0, 0.0
 sdc, sdh, sdv, sdnmi, sdnc = 0.0, 0.0, 0.0, 0.0, 0.0
-for r in range(args.repeat[0]):
-	if args.method != None:
+if args.method != None:
+	repeat = args.repeat[0]
+	for r in range(repeat):
 		if args.method[0] == 'tcd':
 			bp_list = []
 			if args.search == True:
@@ -85,27 +88,37 @@ for r in range(args.repeat[0]):
 			#Not working properly!!!
 			elif args.method[0] == 'louvain':
 				clusters_list = list(tools.community_detection_wrapper(tools.louvain, graph))
-				print(clusters_list)
-	else:
-		clusters = np.loadtxt(args.feed[0], delimiter=' ')
-		if first_node_label > 0 and clusters[0][0] == 0:
-			clusters = clusters[1:]
-		clusters_dic = {}
-		for t in clusters:
-			key = int(t[1])
-			value = int(t[0])
-			if key in clusters_dic:
-				clusters_dic[key].append(value)
-			else:
-				clusters_dic[key] = [value]
-		clusters_list = list(clusters_dic.values())
-	eval_measures = tools.evaluation(nodes_class_labels, clusters_list, node_count, first_node_label)
-	(ac, ah, av, anmi, anc) = map(operator.add, (ac, ah, av, anmi, anc), eval_measures)
-	(sdc, sdh, sdv, sdnmi, sdnc) = map(operator.add, (sdc, sdh, sdv, sdnmi, sdnc), map(operator.mul, eval_measures, eval_measures))
-	print("####################################################")
+		eval_measures = tools.evaluation(nodes_class_labels, clusters_list, node_count, first_node_label)
+		(ac, ah, av, anmi, anc) = map(operator.add, (ac, ah, av, anmi, anc), eval_measures)
+		(sdc, sdh, sdv, sdnmi, sdnc) = map(operator.add, (sdc, sdh, sdv, sdnmi, sdnc), map(operator.mul, eval_measures, eval_measures))
+		print("####################################################")
+else:
+	directory_str = args.feed[0]
+	directory = os.fsencode(directory_str)
+
+	for f in os.listdir(directory):
+		filename = os.fsdecode(f)
+		if filename.endswith(".clu"): 
+			repeat += 1
+			clusters = np.loadtxt(str(os.path.join(directory_str, filename)), delimiter=' ')
+			if first_node_label > 0 and clusters[0][0] == 0:
+				clusters = clusters[1:]
+			clusters_dic = {}
+			for t in clusters:
+				key = int(t[1])
+				value = int(t[0])
+				if key in clusters_dic:
+					clusters_dic[key].append(value)
+				else:
+					clusters_dic[key] = [value]
+			clusters_list = list(clusters_dic.values())
+		eval_measures = tools.evaluation(nodes_class_labels, clusters_list, node_count, first_node_label)
+		(ac, ah, av, anmi, anc) = map(operator.add, (ac, ah, av, anmi, anc), eval_measures)
+		(sdc, sdh, sdv, sdnmi, sdnc) = map(operator.add, (sdc, sdh, sdv, sdnmi, sdnc), map(operator.mul, eval_measures, eval_measures))
+		print("####################################################")
 print("################# Average Measures #################")
 print("####################################################")
-(ac, ah, av, anmi, anc, sdc, sdh, sdv, sdnmi, sdnc) = map(operator.truediv, (ac, ah, av, anmi, anc, sdc, sdh, sdv, sdnmi, sdnc), [args.repeat[0]]*10)
+(ac, ah, av, anmi, anc, sdc, sdh, sdv, sdnmi, sdnc) = map(operator.truediv, (ac, ah, av, anmi, anc, sdc, sdh, sdv, sdnmi, sdnc), [repeat]*10)
 (sdc, sdh, sdv, sdnmi, sdnc) = map(operator.sub, (sdc, sdh, sdv, sdnmi, sdnc), map(operator.mul, (ac, ah, av, anmi, anc), (ac, ah, av, anmi, anc)) )
 (sdc, sdh, sdv, sdnmi, sdnc) = map(operator.abs, (sdc, sdh, sdv, sdnmi, sdnc))
 (sdc, sdh, sdv, sdnmi, sdnc) = map(operator.pow, (sdc, sdh, sdv, sdnmi, sdnc), [0.5]*5)
@@ -123,8 +136,8 @@ if args.use_pickle_file == True:
 else:
 	pos = nx.spring_layout(graph, iterations=50)
 	if args.creat_pickle_file == True:
-		with open(pickle_file, 'wb') as file:
-			pickle.dump(pos, file)
+		with open(pickle_file, 'wb') as f:
+			pickle.dump(pos, f)
 
 tools.draw_network( graph, clusters_list, ground_truth, pos )
 
