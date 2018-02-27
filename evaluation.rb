@@ -781,7 +781,7 @@ end
 # )
 
 # name = "football"
-# path = "/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/#{name}/"
+# path = "/home/vahid/Dropbox/Research/community-detection/datasets/#{name}/"
 # Dataset.create_dataset_from_gml_file(
 # 	input: path+name+'.gml', 
 # 	graph_path: path+name+'.txt', 

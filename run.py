@@ -26,12 +26,13 @@ parser.add_argument('-dp', '--dataset_path', nargs=1)
 parser.add_argument('-dn', '--dataset_name', nargs=1)
 parser.add_argument('--feed', nargs=1)
 parser.add_argument('-m', '--method', nargs=1, type=str, default=None)
-parser.add_argument('-e', '--epsilon', nargs=1, type=int, default=[2])
+parser.add_argument('-e', '--epsilon', nargs=1, type=float, default=[2])
 parser.add_argument('-b', '--beta', nargs=1, type=float, default=[0.5])
 parser.add_argument('-a', '--alpha', nargs=1, type=int, default=[3])
 parser.add_argument('-k', nargs=1, type=int, default=[2])
 parser.add_argument('-r', '--repeat', nargs=1, type=int, default=[1])
 
+parser.add_argument('--draw', action='store_true')
 parser.add_argument('-s', '--search', action='store_true')
 parser.add_argument('-cp', '--creat_pickle_file', action='store_true')
 parser.add_argument('-up', '--use_pickle_file', action='store_true')
@@ -51,15 +52,20 @@ print("####################################################")
 print("Loading Graph ... ", end='')
 start = time.time()
 fh=open(graph_file, 'rb')
-graph = nx.read_edgelist(fh, nodetype=int)
+graph = nx.read_edgelist(fh, nodetype=int, delimiter=' ')
 fh.close()
 end = time.time()
 print("finished in %d s ." % (end - start))
 
 nx.set_edge_attributes(graph, 1, 'weight')
+#for e in graph.edges:
+#	graph[e[0]][e[1]]['weight'] = tcd_tools.calc_edge_weight(graph, e[0], e[1])
+#	if graph[e[0]][e[1]]['weight'] != 0:
+#		print("[{}, {}]: {}, {}".format(e[0], e[1], 1.0/graph[e[0]][e[1]]['weight'], 1.0/graph[e[1]][e[0]]['weight']))
+#	else: print("[{}, {}]: {}, {}".format(e[0], e[1], "Inf", "Inf"))
 node_count = graph.number_of_nodes()
 
-ground_truth = np.loadtxt(ground_truth_file, delimiter=' ', dtype='int')
+ground_truth = np.loadtxt(ground_truth_file, dtype='int')
 nodes_class_labels = ground_truth[:,1]
 
 clusters_list = []
@@ -88,6 +94,10 @@ if args.method != None:
 			#Not working properly!!!
 			elif args.method[0] == 'louvain':
 				clusters_list = list(tools.community_detection_wrapper(tools.louvain, graph))
+
+#		print(clusters_list)
+#		for v in graph.nodes:
+#			print("{}, ".format(graph.nodes[v]['cluster_id']), end='')
 		eval_measures = tools.evaluation(nodes_class_labels, clusters_list, node_count, first_node_label)
 		(ac, ah, av, anmi, anc) = map(operator.add, (ac, ah, av, anmi, anc), eval_measures)
 		(sdc, sdh, sdv, sdnmi, sdnc) = map(operator.add, (sdc, sdh, sdv, sdnmi, sdnc), map(operator.mul, eval_measures, eval_measures))
@@ -130,16 +140,17 @@ print("####################################################")
 tools.print_eval_result(sdc, sdh, sdv, sdnmi, sdnc)
 print("####################################################")
 
-if args.use_pickle_file == True:	
-	with open(pickle_file, 'rb') as handle:
-		pos = pickle.load(handle)
-else:
-	pos = nx.spring_layout(graph, iterations=50)
-	if args.creat_pickle_file == True:
-		with open(pickle_file, 'wb') as f:
-			pickle.dump(pos, f)
+if args.draw == True:
+	if args.use_pickle_file == True:	
+		with open(pickle_file, 'rb') as handle:
+			pos = pickle.load(handle)
+	else:
+		pos = nx.spring_layout(graph, iterations=50)
+		if args.creat_pickle_file == True:
+			with open(pickle_file, 'wb') as f:
+				pickle.dump(pos, f)
 
-tools.draw_network( graph, clusters_list, ground_truth, pos )
+	tools.draw_network( graph, clusters_list, ground_truth, pos )
 
 
 

@@ -24,12 +24,12 @@ def draw_network(graph, clusters_list, node_classes, pos):
 			temp.set_edgecolor('k')
 		cc += 1
 	nx.drawing.nx_pylab.draw_networkx_edges(graph, pos, alpha=0.5, width=0.75, edge_color='tab:gray')
-#	nx.draw_networkx_labels(graph, pos, font_size=6, font_color='k', font_family = 'Latin Modern Roman Demi')
+	nx.draw_networkx_labels(graph, pos, font_size=10, font_color='k', font_family = 'Latin Modern Roman Demi')
 
 	plt.axis('off')
 	plt.show()
 
-def evaluation(nodes_class_labels, clusters_list, node_count, first_node_label, p=2):
+def evaluation(nodes_class_labels, clusters_list, node_count, first_node_label, p=3):
 
 	#initializing the array of cluster labels for the nodes
 	node_cluster_labels = [0]*node_count
