@@ -24,7 +24,7 @@ def draw_network(graph, clusters_list, node_classes, pos):
 			temp.set_edgecolor('k')
 		cc += 1
 	nx.drawing.nx_pylab.draw_networkx_edges(graph, pos, alpha=0.5, width=0.75, edge_color='tab:gray')
-	nx.draw_networkx_labels(graph, pos, font_size=10, font_color='k', font_family = 'Latin Modern Roman Demi')
+#	nx.draw_networkx_labels(graph, pos, font_size=10, font_color='k', font_family = 'Latin Modern Roman Demi')
 
 	plt.axis('off')
 	plt.show()

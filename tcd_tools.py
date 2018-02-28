@@ -8,15 +8,16 @@ import objective_functions as objf
 def parameter_selection(graph):
 	print("Start Searching for the best clustering:")
 	g_start = time.time()
-	b_obj_val, b_alpha, b_beta, b_epsilon = 0, None, None, None
+	b_obj_val, b_alpha, b_beta, b_epsilon = 0, 0, 0, 0
 	clusters_dic = {}
 	node_cluster_labels_dic = {}
 	bp_list = []
-	for epsilon in range(2, 6):
+	for e in range(2, 11):
+		epsilon = 0.2 + (e-1)*0.01
 		for alpha in range(3, 8):
 			for b in range(5, 20):
 				beta = b/20.0
-
+	
 				clusters_list = tools.community_detection_wrapper(tcd, graph, alpha, beta, epsilon)
 			
 				print ("Estimating the quality of clusters ... " , end='')
@@ -35,7 +36,7 @@ def parameter_selection(graph):
 
 	g_end = time.time()
 	print("Search is finished in %d s ." % (g_end - g_start))
-	print("Best parameters: \ne:\t%d\nb:\t%.2f\na:\t%d" % (b_epsilon, b_beta, b_alpha) )
+	print("Best parameters: \ne:\t%f\nb:\t%.2f\na:\t%d" % (b_epsilon, b_beta, b_alpha) )
 	print("#####################################################")
 
 	return bp_list

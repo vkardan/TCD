@@ -57,9 +57,9 @@ fh.close()
 end = time.time()
 print("finished in %d s ." % (end - start))
 
-nx.set_edge_attributes(graph, 1, 'weight')
-#for e in graph.edges:
-#	graph[e[0]][e[1]]['weight'] = tcd_tools.calc_edge_weight(graph, e[0], e[1])
+#nx.set_edge_attributes(graph, 1, 'weight')
+for e in graph.edges:
+	graph[e[0]][e[1]]['weight'] = tcd_tools.calc_edge_weight(graph, e[0], e[1])
 #	if graph[e[0]][e[1]]['weight'] != 0:
 #		print("[{}, {}]: {}, {}".format(e[0], e[1], 1.0/graph[e[0]][e[1]]['weight'], 1.0/graph[e[1]][e[0]]['weight']))
 #	else: print("[{}, {}]: {}, {}".format(e[0], e[1], "Inf", "Inf"))

@@ -3,6 +3,8 @@ import networkx as nx
 import collections
 
 def obj_function(graph, partition, node_clusters_dic, cluster_count, epsilon, beta, alpha, amin=3, amax=17, bmin=0.25, bmax=0.95, emin=3, emax=5, etha=0.5):
+
+	if len(partition) == 1: return 0
 	node_count = graph.number_of_nodes()
 
 	gamma = 0.0
@@ -13,7 +15,7 @@ def obj_function(graph, partition, node_clusters_dic, cluster_count, epsilon, be
 
 	reg_term = (gamma*n_csize + n_epsilon + n_beta + n_alpha)/(gamma + 3)
 	modularity = cm.modularity(node_clusters_dic, graph)
-
+	
 	coverage = nx.algorithms.community.quality.coverage(graph, partition)
 	return (1-etha)*coverage + etha*modularity
 
