@@ -57,7 +57,8 @@ fh.close()
 end = time.time()
 print("finished in %d s ." % (end - start))
 
-nx.set_edge_attributes(graph, 1, 'weight')
+nx.set_node_attributes(graph, nx.current_flow_closeness_centrality(graph), 'weight')
+#nx.set_edge_attributes(graph, 1, 'weight')
 #for e in graph.edges:
 #	graph[e[0]][e[1]]['weight'] = tcd_tools.calc_edge_weight(graph, e[0], e[1])
 #	if graph[e[0]][e[1]]['weight'] != 0:
