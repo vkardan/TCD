@@ -51,18 +51,106 @@ class Dataset
 				raise 'Bad target format!' if state != 11
 				edge['target'] = items[1].to_i
 				graph[edge['source']]['children'] ||= []
-				graph[edge['source']]['children'] << graph[edge['target']]['id'] 
-				m += 1
-				unless directed then
-					graph[edge['target']]['children'] ||= []
-					graph[edge['target']]['children'] << graph[edge['source']]['id'] 
+				unless edge['source'] == edge['target'] || graph[edge['source']]['children'].include?(graph[edge['target']]['id']) then
+					graph[edge['source']]['children'] << graph[edge['target']]['id'] 
 					m += 1
+					unless directed then
+						graph[edge['target']]['children'] ||= []
+						unless graph[edge['target']]['children'].include?(graph[edge['source']]['id']) then
+							graph[edge['target']]['children'] << graph[edge['source']]['id'] 
+							m += 1
+						end
+					end
 				end
 				state = 0
 			end						
 		end
 		puts graph.size
 		graph = graph.sort.to_h
+		File.open(clusters_path, 'w') do |c|
+			graph.each do |s, h|
+				raise "Bad format, no id found for node with source: #{s}" if h['id'].nil?
+				raise "Bad format, no cluster found for node with source: #{s}" if h['cluster'].nil?
+				c.puts "#{h['id']} #{h['cluster']}"
+			end
+		end
+		File.open(graph_path, 'w') do |g|
+			graph.each do |s, h|
+				h['children'].sort.each { |child| g.puts "#{h['id']} #{child}" } unless h['children'].nil?
+			end
+		end
+		File.open(graph_path+'.meta', 'w') {|f| f.puts "N: #{n}, M: #{m}"}
+	end
+
+	def self.create_dataset_from_gml_file2(input:, graph_path:, clusters_path:, directed: true, first_node_id: 1)
+		n = 0
+		m = 0
+		index = first_node_id
+		state = 0
+		node = Hash.new
+		edge = Hash.new
+		cluster = Hash.new
+		graph = Hash.new
+		fi = File.open(input, "r")
+		fi.each_line do |line| 
+			items = line.split(/\s/) - [""]
+			case items[0]
+			when 'node'
+				state = 1
+			when 'edge'
+				state = 10
+			when 'id'
+				raise 'Bad id format!' if state != 1
+				node['id'] = items[1].to_i
+				state = 2
+			when 'value'
+				raise 'Bad value format!' if state != 2
+				##node['cluster'] = items[1].to_i + 1
+				cluster[node['id']] = items[1].to_i + 1
+				#clusters.puts node['id']+' '+node['cluster']
+				state = 3
+			when 'source'
+				raise 'Bad source format!' if state != 10 && state != 3
+				if state == 10 then
+					edge['source'] = items[1].to_i 
+					unless graph.key?(edge['source']) then
+						graph[edge['source']] = Hash.new
+						graph[edge['source']]['id'] = index
+						graph[edge['source']]['cluster'] = cluster[edge['source']]
+						index += 1
+						n += 1
+					end
+					state = 11
+				else # state = 3
+					state = 0 
+				end
+			when 'target'
+				raise 'Bad target format!' if state != 11
+				edge['target'] = items[1].to_i
+				unless graph.key?(edge['target']) then
+					graph[edge['target']] = Hash.new
+					graph[edge['target']]['id'] = index
+					graph[edge['target']]['cluster'] = cluster[edge['target']]
+					index += 1
+					n += 1
+				end
+				graph[edge['source']]['children'] ||= []
+				unless edge['source'] == edge['target'] || graph[edge['source']]['children'].include?(graph[edge['target']]['id']) then
+					graph[edge['source']]['children'] << graph[edge['target']]['id'] 
+					m += 1
+					unless directed then
+						graph[edge['target']]['children'] ||= []
+						unless graph[edge['target']]['children'].include?(graph[edge['source']]['id']) then
+							graph[edge['target']]['children'] << graph[edge['source']]['id'] 
+							m += 1
+						end
+					end
+				end
+				state = 0
+			end						
+		end
+		puts graph.size
+		#graph = graph.sort.to_h
 		File.open(clusters_path, 'w') do |c|
 			graph.each do |s, h|
 				raise "Bad format, no id found for node with source: #{s}" if h['id'].nil?
@@ -772,11 +860,13 @@ EOF
 	puts "No. Clusters:\t#{avg_cluster_count} ,\t\t\t#{dev_cluster_count}\nNo. Classes:\t#{real_cluster_count}"
 
 end
-# path = '/home/vahid/Dropbox/Vahid-Research/community-detection/datasets/polblogs/'
-# Dataset.create_dataset_from_gml_file(
-# 	input: path+'polblogs.gml', 
-# 	graph_path: path+'polblogs.txt', 
-# 	clusters_path: path+'polblogs.clu',
+# name = "polblogs2"
+# path = "/home/vahid/Dropbox/Research/community-detection/datasets/#{name}/"
+# Dataset.create_dataset_from_gml_file2(
+# 	input: path+name+'.gml', 
+# 	graph_path: path+name+'.txt', 
+# 	clusters_path: path+name+'.clu',
+# 	directed: true,
 # 	first_node_id: 1
 # )
 

@@ -13,7 +13,7 @@ from sklearn.metrics.cluster import v_measure_score as v_score
 
 import tools
 import tcd_tools
-
+import objective_functions as objf
 #########################################################################################################################
 
 
@@ -57,7 +57,7 @@ fh.close()
 end = time.time()
 print("finished in %d s ." % (end - start))
 
-nx.set_node_attributes(graph, nx.current_flow_closeness_centrality(graph), 'weight')
+#nx.set_node_attributes(graph, nx.current_flow_closeness_centrality(graph), 'weight')
 #nx.set_edge_attributes(graph, 1, 'weight')
 #for e in graph.edges:
 #	graph[e[0]][e[1]]['weight'] = tcd_tools.calc_edge_weight(graph, e[0], e[1])
@@ -75,15 +75,24 @@ ac, ah, av, anmi, anc = 0.0, 0.0, 0.0, 0.0, 0.0
 sdc, sdh, sdv, sdnmi, sdnc = 0.0, 0.0, 0.0, 0.0, 0.0
 if args.method != None:
 	repeat = args.repeat[0]
+	b_objf_value = -1
 	for r in range(repeat):
 		if args.method[0] == 'tcd':
 			bp_list = []
 			if args.search == True:
 				bp_list = tcd_tools.parameter_selection(graph)
+				for params in bp_list:
+					clusters_list = tools.community_detection_wrapper(tcd_tools.tcd, graph, params[0], params[1], params[2])
 			else:
-				bp_list.append((args.alpha[0], args.beta[0], args.epsilon[0]))
-			for params in bp_list:
-				clusters_list = tools.community_detection_wrapper(tcd_tools.tcd, graph, params[0], params[1], params[2])
+#				bp_list.append((args.alpha[0], args.beta[0], args.epsilon[0]))
+				can_clusters_list = tools.community_detection_wrapper(tcd_tools.tcd, graph, args.alpha[0], args.beta[0], args.epsilon[0])
+				cluster_count = len(can_clusters_list)
+				node_cluster_labels_dic = nx.get_node_attributes(graph, 'cluster_id')
+				obj_value = objf.obj_function(graph, can_clusters_list, node_cluster_labels_dic, cluster_count, args.epsilon[0], args.beta[0], args.alpha[0])
+				if  obj_value > b_objf_value:
+					b_objf_value = obj_value
+					clusters_list = can_clusters_list
+				
 			
 		else: 	
 			if args.method[0] == 'sslpa':	
@@ -100,8 +109,12 @@ if args.method != None:
 #		for v in graph.nodes:
 #			print("{}, ".format(graph.nodes[v]['cluster_id']), end='')
 		eval_measures = tools.evaluation(nodes_class_labels, clusters_list, node_count, first_node_label)
-		(ac, ah, av, anmi, anc) = map(operator.add, (ac, ah, av, anmi, anc), eval_measures)
-		(sdc, sdh, sdv, sdnmi, sdnc) = map(operator.add, (sdc, sdh, sdv, sdnmi, sdnc), map(operator.mul, eval_measures, eval_measures))
+		if args.method[0] != 'tcd':
+			(ac, ah, av, anmi, anc) = map(operator.add, (ac, ah, av, anmi, anc), eval_measures)
+			(sdc, sdh, sdv, sdnmi, sdnc) = map(operator.add, (sdc, sdh, sdv, sdnmi, sdnc), map(operator.mul, eval_measures, eval_measures))
+		else:
+			(ac, ah, av, anmi, anc) = map(operator.mul, eval_measures, [repeat]*5)
+			(sdc, sdh, sdv, sdnmi, sdnc) = map(operator.mul, [repeat]*5, map(operator.mul, eval_measures, eval_measures))		
 		print("####################################################")
 else:
 	directory_str = args.feed[0]

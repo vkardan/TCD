@@ -6,7 +6,7 @@ import tools
 import objective_functions as objf
 import random
 
-def parameter_selection(graph, repetition=100):
+def parameter_selection(graph, repetition=10):
 	print("Start Searching for the best clustering:")
 	g_start = time.time()
 	b_obj_val, b_alpha, b_beta, b_epsilon = 0, 0, 0, 0
@@ -14,9 +14,9 @@ def parameter_selection(graph, repetition=100):
 	node_cluster_labels_dic = {}
 	bp_list = []
 	
-	for epsilon in range(2, 6):
-		for alpha in range(3, 8):
-			for b in range(5, 20):
+	for epsilon in range(2, 3):
+		for alpha in range(3, 15):
+			for b in range(10, 20):
 				beta = b/20.0
 				avg_obj_val = 0.0
 				for rep in range(repetition):
@@ -98,6 +98,7 @@ def get_tolerance_class(graph, start_node, epsilon, sort_by_degree=False):
 #			if w > best_w or (w == best_w and random.randrange(0,1) == 1): 
 #				root, best_w = c, w
 		candidates.discard(root)
+#		root = candidates.pop()
 		tclass.add(root)
 		neighborhood = bfs(graph, root, epsilon)
 		candidates = candidates & neighborhood
@@ -135,6 +136,7 @@ def find_nearest_cluster_id(graph, cluster, original_cluster_id, epsilon):
 					chosen_id = cid
 					break
 			if chosen_id != None: break
+	if chosen_id == None: chosen_id = original_cluster_id
 	return chosen_id
 
 def calc_closeness(set1, set2):
