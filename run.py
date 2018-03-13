@@ -1,5 +1,5 @@
 import numpy as np
-import community
+#import community as cm
 import networkx as nx
 import time
 import argparse
@@ -7,7 +7,7 @@ import operator
 import pickle
 import os
 
-from networkx.algorithms import community as com
+#from networkx.algorithms import community as com
 from sklearn.metrics.cluster import normalized_mutual_info_score as nmi_score
 from sklearn.metrics.cluster import v_measure_score as v_score
 
