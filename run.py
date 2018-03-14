@@ -52,11 +52,13 @@ print("####################################################")
 print("Loading Graph ... ", end='')
 start = time.time()
 fh=open(graph_file, 'rb')
-graph = nx.read_edgelist(fh, nodetype=int, delimiter=' ')
+G = nx.read_edgelist(fh, nodetype=int, delimiter=' ')
 fh.close()
 end = time.time()
 print("finished in %d s ." % (end - start))
 
+largest_cc = max(nx.connected_components(G), key=len)
+graph = G.subgraph(largest_cc)
 #nx.set_node_attributes(graph, nx.current_flow_closeness_centrality(graph), 'weight')
 #nx.set_edge_attributes(graph, 1, 'weight')
 #for e in graph.edges:
@@ -67,7 +69,12 @@ print("finished in %d s ." % (end - start))
 node_count = graph.number_of_nodes()
 
 ground_truth = np.loadtxt(ground_truth_file, dtype='int')
-nodes_class_labels = ground_truth[:,1]
+#nodes_class_labels = ground_truth[:,1]
+nodes_class_labels = []
+nodes_set = set(nx.nodes(graph))
+for i in range(len(ground_truth)):
+	if ground_truth[i][0] in nodes_set:
+		nodes_class_labels.append(ground_truth[i][1])
 
 clusters_list = []
 repeat = 0

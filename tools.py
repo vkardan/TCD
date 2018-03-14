@@ -29,14 +29,15 @@ def draw_network(graph, clusters_list, node_classes, pos):
 	plt.axis('off')
 	plt.show()
 
-def evaluation(nodes_class_labels, clusters_list, node_count, first_node_label, p=3):
+def evaluation(nodes_class_labels, clusters_list, node_count, first_node_label, p=5):
 
 	#initializing the array of cluster labels for the nodes
-	node_cluster_labels = [0]*node_count
+	node_cluster_labels = {}#[0]*node_count
 	for i in range(len(clusters_list)): 
 		for j in clusters_list[i]:
-			node_cluster_labels[j-first_node_label] = i + 1
-
+			#node_cluster_labels[j-first_node_label] = i + 1
+			node_cluster_labels[j] = i + 1
+	node_cluster_labels = [value for (key, value) in sorted(node_cluster_labels.items())]
 	c = round(metric.completeness_score(nodes_class_labels, node_cluster_labels), p)
 	h = round(metric.homogeneity_score(nodes_class_labels, node_cluster_labels), p)
 	v = round(metric.v_measure_score(nodes_class_labels, node_cluster_labels), p)

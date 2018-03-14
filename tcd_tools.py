@@ -15,8 +15,8 @@ def parameter_selection(graph, repetition=10):
 	bp_list = []
 	
 	for epsilon in range(2, 3):
-		for alpha in range(3, 15):
-			for b in range(10, 20):
+		for alpha in range(3, 15): #3-15
+			for b in range(10, 20): #10-20
 				beta = b/20.0
 				avg_obj_val = 0.0
 				for rep in range(repetition):
