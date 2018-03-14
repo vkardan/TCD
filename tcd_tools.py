@@ -74,7 +74,8 @@ def tcd(graph, alpha, beta, epsilon):
 
 	for cid in list(clusters_dic.keys()) :
 		if len(clusters_dic[cid]) < alpha :
-			nearest_cid = find_nearest_cluster_id(graph, clusters_dic[cid], cid, epsilon)				
+			nearest_cid = find_nearest_cluster_id(graph, clusters_dic[cid], cid, epsilon)
+			if nearest_cid == None: continue				
 			clusters_dic[nearest_cid] = clusters_dic[nearest_cid] | clusters_dic[cid]
 			for node_id in clusters_dic[cid] :
 				graph.nodes[node_id]['cluster_id'] = nearest_cid
@@ -136,7 +137,6 @@ def find_nearest_cluster_id(graph, cluster, original_cluster_id, epsilon):
 					chosen_id = cid
 					break
 			if chosen_id != None: break
-	if chosen_id == None: chosen_id = original_cluster_id
 	return chosen_id
 
 def calc_closeness(set1, set2):
