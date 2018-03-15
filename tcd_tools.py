@@ -6,7 +6,7 @@ import tools
 import objective_functions as objf
 import random
 
-def parameter_selection(graph, repetition=10):
+def parameter_selection(graph, repetition=50):
 	print("Start Searching for the best clustering:")
 	g_start = time.time()
 	b_obj_val, b_alpha, b_beta, b_epsilon = 0, 0, 0, 0
@@ -15,10 +15,11 @@ def parameter_selection(graph, repetition=10):
 	bp_list = []
 	
 	for epsilon in range(2, 3):
-		for alpha in range(3, 15): #3-15
-			for b in range(10, 20): #10-20
+		for alpha in range(3, 7): #3-15
+			for b in range(10, 11): #10-20
 				beta = b/20.0
 				avg_obj_val = 0.0
+				bl_obj_val = 0.0
 				for rep in range(repetition):
 					clusters_list = tools.community_detection_wrapper(tcd, graph, alpha, beta, epsilon)
 				
@@ -30,10 +31,13 @@ def parameter_selection(graph, repetition=10):
 					obj_val = objf.obj_function(graph, clusters_list, node_cluster_labels_dic, cluster_count, epsilon, beta, alpha)
 					print ("Estimated Quality: {}".format(obj_val))
 					avg_obj_val +=  obj_val
+					if obj_val > bl_obj_val:
+						bl_obj_val = obj_val
 #					end = time.time()
 #					print ("finished in %d s, O: %f" % ((end - start), obj_val))
 				avg_obj_val /= repetition
 				print ("Average Estimated Quality: {}".format(avg_obj_val))
+				print ("Best Local Quality: {}".format(bl_obj_val))
 				if avg_obj_val > b_obj_val :
 					b_obj_val, b_alpha, b_beta, b_epsilon = avg_obj_val, alpha, beta, epsilon
 					bp_list = [(alpha, beta, epsilon)]

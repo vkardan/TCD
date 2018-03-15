@@ -6,6 +6,7 @@ import argparse
 import operator
 import pickle
 import os
+import random
 
 #from networkx.algorithms import community as com
 from sklearn.metrics.cluster import normalized_mutual_info_score as nmi_score
@@ -83,6 +84,7 @@ sdc, sdh, sdv, sdnmi, sdnc = 0.0, 0.0, 0.0, 0.0, 0.0
 if args.method != None:
 	repeat = args.repeat[0]
 	b_objf_value = -1
+	random.seed(0)
 	for r in range(repeat):
 		if args.method[0] == 'tcd':
 			bp_list = []
