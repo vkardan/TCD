@@ -6,7 +6,7 @@ import tools
 import objective_functions as objf
 import random
 
-def parameter_selection(graph, repetition=50):
+def parameter_selection(graph, repetition=10):
 	print("Start Searching for the best clustering:")
 	g_start = time.time()
 	b_obj_val, b_alpha, b_beta, b_epsilon = 0, 0, 0, 0
@@ -15,7 +15,7 @@ def parameter_selection(graph, repetition=50):
 	bp_list = []
 	
 	for epsilon in range(2, 3):
-		for alpha in range(3, 7): #3-15
+		for alpha in range(3, 25): #3-15
 			for b in range(10, 11): #10-20
 				beta = b/20.0
 				avg_obj_val = 0.0

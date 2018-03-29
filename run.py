@@ -34,6 +34,7 @@ parser.add_argument('-k', nargs=1, type=int, default=[2])
 parser.add_argument('-r', '--repeat', nargs=1, type=int, default=[1])
 
 parser.add_argument('--draw', action='store_true')
+parser.add_argument('--lcc', action='store_true')
 parser.add_argument('-s', '--search', action='store_true')
 parser.add_argument('-cp', '--creat_pickle_file', action='store_true')
 parser.add_argument('-up', '--use_pickle_file', action='store_true')
@@ -45,21 +46,26 @@ first_node_label = args.fnl
 #dataset properties
 working_path = args.dataset_path[0]
 dataset_name = args.dataset_name[0]
-graph_file = working_path +'/'+dataset_name+'.txt'
-ground_truth_file = working_path +'/'+dataset_name+'.clu'
-pickle_file = working_path +'/'+dataset_name+'.pickle'
+suffix = ''
+if args.lcc == True: suffix = '_lcc'
+
+graph_file = working_path + '/' + dataset_name + suffix + '.txt'
+ground_truth_file = working_path + '/' +dataset_name + suffix +'.clu'
+pickle_file = working_path + '/'+ dataset_name + suffix + '.pickle'
 
 print("####################################################")
 print("Loading Graph ... ", end='')
 start = time.time()
 fh=open(graph_file, 'rb')
-G = nx.read_edgelist(fh, nodetype=int, delimiter=' ')
+###G = nx.read_edgelist(fh, nodetype=int, delimiter=' ')
+graph = nx.read_edgelist(fh, nodetype=int, delimiter=' ')
 fh.close()
 end = time.time()
 print("finished in %d s ." % (end - start))
 
-largest_cc = max(nx.connected_components(G), key=len)
-graph = G.subgraph(largest_cc)
+###largest_cc = max(nx.connected_components(G), key=len)
+###graph = G.subgraph(largest_cc)
+
 #nx.set_node_attributes(graph, nx.current_flow_closeness_centrality(graph), 'weight')
 #nx.set_edge_attributes(graph, 1, 'weight')
 #for e in graph.edges:
@@ -67,15 +73,17 @@ graph = G.subgraph(largest_cc)
 #	if graph[e[0]][e[1]]['weight'] != 0:
 #		print("[{}, {}]: {}, {}".format(e[0], e[1], 1.0/graph[e[0]][e[1]]['weight'], 1.0/graph[e[1]][e[0]]['weight']))
 #	else: print("[{}, {}]: {}, {}".format(e[0], e[1], "Inf", "Inf"))
+
 node_count = graph.number_of_nodes()
 
 ground_truth = np.loadtxt(ground_truth_file, dtype='int')
-#nodes_class_labels = ground_truth[:,1]
-nodes_class_labels = []
-nodes_set = set(nx.nodes(graph))
-for i in range(len(ground_truth)):
-	if ground_truth[i][0] in nodes_set:
-		nodes_class_labels.append(ground_truth[i][1])
+nodes_class_labels = ground_truth[:,1]
+
+###nodes_class_labels = []
+###nodes_set = set(nx.nodes(graph))
+###for i in range(len(ground_truth)):
+###	if ground_truth[i][0] in nodes_set:
+###		nodes_class_labels.append(ground_truth[i][1])
 
 clusters_list = []
 repeat = 0
@@ -84,6 +92,9 @@ sdc, sdh, sdv, sdnmi, sdnc = 0.0, 0.0, 0.0, 0.0, 0.0
 if args.method != None:
 	repeat = args.repeat[0]
 	b_objf_value = -1
+	b_cov = -1
+	b_mod = -1
+	b_cco = -1
 	random.seed(0)
 	for r in range(repeat):
 		if args.method[0] == 'tcd':
@@ -101,7 +112,6 @@ if args.method != None:
 				if  obj_value > b_objf_value:
 					b_objf_value = obj_value
 					clusters_list = can_clusters_list
-				
 			
 		else: 	
 			if args.method[0] == 'sslpa':	

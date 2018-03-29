@@ -15,6 +15,8 @@ def obj_function(graph, partition, node_clusters_dic, cluster_count, epsilon, be
 	modularity = cm.modularity(node_clusters_dic, graph)
 
 	coverage = nx.algorithms.community.quality.coverage(graph, partition)
+
+	if modularity <= 0 or coverage <= 0: return 0.0
 	return (1-etha)*coverage + etha*modularity
 
 def min_max_norm(value, minv, maxv):
